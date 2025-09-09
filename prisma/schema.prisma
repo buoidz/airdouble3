@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
     provider = "prisma-client-js"
 }
@@ -10,11 +7,120 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-model Post {
-    id        Int      @id @default(autoincrement())
+model User {
+    id        String   @id  // Clerk ID
+    email     String   @unique
+    createdAt DateTime @default(now())
+
+    bases     Base[]
+    tables    Table[]
+}
+
+model Base {
+    id        String   @id @default(cuid())
     name      String
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    @@index([name])
+    ownerId   String
+    owner     User     @relation(fields: [ownerId], references: [id])
+
+    tables    Table[]
+
+    @@index([ownerId])
 }
+
+model Table {
+    id        String   @id @default(cuid())
+    name      String
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    baseId    String
+    base      Base     @relation(fields: [baseId], references: [id])
+
+    ownerId   String
+    owner     User     @relation(fields: [ownerId], references: [id])
+
+    columns   Column[]
+    rows      Row[]
+    views     View[]
+
+    @@index([baseId])
+    @@index([ownerId])
+}
+
+enum ColumnType {
+  TEXT
+  NUMBER
+}
+
+model Column {
+    id        String   @id @default(cuid())
+    name      String
+    type      ColumnType
+    order     Int
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    tableId   String
+    table     Table    @relation(fields: [tableId], references: [id])
+
+    cells     Cell[]
+
+    @@unique([tableId, name])
+    @@index([tableId, order])
+    @@index([tableId, type])
+    @@map("columns")
+}
+
+model Row {
+    id        String   @id @default(cuid())
+    order     Int
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    tableId   String
+    table     Table    @relation(fields: [tableId], references: [id])
+
+    cells     Cell[]
+
+    @@unique([tableId, order])
+    @@index([tableId])
+    @@map("rows")
+}
+
+model Cell {
+    id          String   @id @default(cuid())
+    textValue   String?
+    numberValue Float?
+
+    createdAt   DateTime @default(now())
+    updatedAt   DateTime @updatedAt
+
+    columnId    String
+    column      Column   @relation(fields: [columnId], references: [id])
+
+    rowId       String
+    row         Row      @relation(fields: [rowId], references: [id])
+
+    @@unique([columnId, rowId])
+    @@index([columnId, textValue])
+    @@index([columnId, numberValue])
+}
+
+model View {
+  id          String   @id @default(cuid())
+  tableId     String
+  table       Table    @relation(fields: [tableId], references: [id])
+  name        String
+  config      Json     // JSON for view settings (filters, sort, visible columns)
+  createdAt   DateTime @default(now())
+
+  @@index([tableId])
+}
+

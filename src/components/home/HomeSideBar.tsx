@@ -1,0 +1,71 @@
+import React from "react";
+import { BookOpen, ChevronDown, ChevronRight, Download, House, Plus, ShoppingBag, SquareArrowOutUpRight, Star, UsersRound } from "lucide-react";
+
+const HomeSidebar = () => (
+  <div className="h-full w-75 border-r-2 border-gray-200 flex flex-col items-center justify-between">
+    <div className="flex flex-col items-center m-3 gap-1">
+      
+      <div className="h-10 w-70 bg-gray-100 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4">
+        <div className="flex flex-row items-center gap-2">
+          <House size={18} />
+          Home
+        </div>
+      </div>
+
+      <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4">
+        <div className="flex flex-row items-center gap-2">
+          <Star size={18} />
+          Starred
+        </div>
+        <div className="flex flex-row items-center gap-2">
+          <ChevronDown size={16} />
+        </div>
+      </div>
+
+      <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4">
+        <div className="flex flex-row items-center gap-2">
+          <SquareArrowOutUpRight size={18} />
+          Shared
+        </div>
+      </div>
+
+      <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4">
+        <div className="flex flex-row items-center gap-2">
+          <UsersRound size={18} />
+          Workspaces
+        </div>
+        <div className="flex flex-row items-center gap-2">
+          <Plus size={16} />
+          <ChevronRight size={16} />
+        </div>
+      </div>
+
+    </div>
+
+    <div className="flex flex-col items-center m-3 gap-1">
+      <div className="mb-3 w-60 border border-gray-200"></div>
+      <div className="h-8 w-70 text-black text-sm flex flex-row items-center px-4 gap-2">
+        <BookOpen size={14} />
+        Templates and apps
+      </div>
+
+      <div className="h-8 w-70 text-black text-sm flex flex-row items-center px-4 gap-2">
+        <ShoppingBag size={14} />
+        Marketplace
+      </div>
+
+      <div className="h-8 w-70 text-black text-sm flex flex-row items-center px-4 gap-2">
+        <Download size={14} />
+        Import
+      </div>
+
+      <button className="mt-3 mb-3 h-8 w-68 bg-blue-600 text-white font-semibold flex flex-row items-center justify-center px-4 gap-2 rounded-md">
+        <Plus size={20} />
+        Create
+      </button>
+    </div>
+
+  </div>
+);
+
+export default HomeSidebar;
