@@ -20,7 +20,7 @@ const Home = () => {
   return (
     <>
       <Head>
-        <title>Airduple</title>
+        <title>Airdouble</title>
         <link rel="icon" href="airtable.png" />
       </Head>
       <main>
