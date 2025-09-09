@@ -8,7 +8,6 @@ import relativeTime from "dayjs/plugin/relativeTime";
 dayjs.extend(relativeTime);
 
 export function HomeContent()  {
-  const utils = api.useUtils();
   const {data: bases, isLoading} = api.base.getAllBases.useQuery();
 
 
@@ -20,8 +19,8 @@ export function HomeContent()  {
     return (
       <div className="flex-1 bg-gray-50 overflow-y-auto">
         <h1 className="py-8 px-10 text-3xl font-bold">Home</h1>
-        <div className="mb-2 w-full flex items-center justify-center text-2xl"> You haven't open anything recently</div>
-        <div className="w-full flex items-center justify-center text-sm text-gray-500"> Apps that you have recently opened will appear here.</div>
+        <div className="mb-2 w-full flex items-center justify-center text-2xl">{"You haven't open anything recently"}</div>
+        <div className="w-full flex items-center justify-center text-sm text-gray-500">Apps that you have recently opened will appear here.</div>
       </div>
     )
   }

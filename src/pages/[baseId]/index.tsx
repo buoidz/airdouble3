@@ -5,13 +5,13 @@ import { LoadingPage } from "~/components/LoadingPage";
 
 export default function BasePage() {
   const router = useRouter();
-  const { baseId } = router.query;
+  const baseId = router.query.baseId as string;
 
-  const { data: table, isLoading } = api.base.getFirstTableBaseById.useQuery({ id: baseId as string });
+  const { data: table, isLoading } = api.base.getFirstTableBaseById.useQuery({ id: baseId });
 
   useEffect(() => {
     if (table) {
-      router.replace(`/${baseId}/${table.id}`);
+      void router.replace(`/${baseId}/${table.id}`);
     }
   }, [table, router]);
 

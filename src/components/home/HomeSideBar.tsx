@@ -12,8 +12,8 @@ export function HomeSideBar() {
     },
     onError: (e) => {
       const errorMessage = e.data?.zodError?.fieldErrors.name;
-      if (errorMessage && errorMessage[0]) {
-        alert(errorMessage[0]);
+      if (errorMessage) {
+        alert(errorMessage);
       } else {
         alert("Failed to create base. Please try again later.");
       }
@@ -80,7 +80,7 @@ export function HomeSideBar() {
 
         <button 
           className="mt-3 mb-3 h-8 w-68 bg-blue-600 text-white font-semibold flex flex-row items-center justify-center px-4 gap-2 rounded-md hover:cursor-pointer"
-          onClick={() => createTableMutation.mutate({ name: "Untitled base" })}
+          onClick={() => void createTableMutation.mutate({ name: "Untitled base" })}
         >
           <Plus size={20} />
           Create
