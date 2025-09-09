@@ -6,10 +6,6 @@ import { api } from "~/utils/api";
 
 import "~/styles/globals.css";
 
-const geist = Geist({
-  subsets: ["latin"],
-});
-
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
     <ClerkProvider>

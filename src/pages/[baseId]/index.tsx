@@ -13,7 +13,7 @@ export default function BasePage() {
     if (table) {
       void router.replace(`/${baseId}/${table.id}`);
     }
-  }, [table, router]);
+  }, [table, baseId, router]);
 
   if (isLoading) {
     return (

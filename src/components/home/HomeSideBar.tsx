@@ -8,7 +8,7 @@ export function HomeSideBar() {
 
   const createTableMutation = api.base.createBase.useMutation({
     onSuccess: (newBase) => {
-      router.push(`/${newBase.id}`);
+      void router.push(`/${newBase.id}`);
     },
     onError: (e) => {
       const errorMessage = e.data?.zodError?.fieldErrors.name;
