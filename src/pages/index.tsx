@@ -3,10 +3,19 @@ import Head from "next/head";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ChevronRight } from "lucide-react";
-import HomeMain from "~/components/home/HomeMain";
+import { HomeMain } from "~/components/home/HomeMain";
+import { LoadingPage } from "~/components/LoadingPage";
 
 const Home = () => {
-  const {isLoaded, isSignedIn} = useUser();
+  const {isLoaded, isSignedIn, } = useUser();
+
+  if (!isLoaded) {
+    return (
+      <div className="h-screen w-screen">
+        <LoadingPage />
+      </div>
+    );
+  }
 
   return (
     <>
@@ -15,7 +24,7 @@ const Home = () => {
         <link rel="icon" href="airtable.png" />
       </Head>
       <main>
-        {(isSignedIn && isLoaded) ? (
+        {(isSignedIn) ? (
           <HomeMain />
           ) : ( 
           <div className="min-h-screen bg-gray-100">
