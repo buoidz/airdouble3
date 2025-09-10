@@ -1,15 +1,14 @@
-import { Table } from "lucide-react"
 import { TableViewSideBar } from "./TableViewSideBar"
 import { TableListBar } from "./TableListBar"
 import { TableToolBar } from "./TableToolBar";
 import { TableContent } from "./TableContent";
 import { api } from "~/utils/api";
 import { LoadingPage } from "../LoadingPage";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function TableMain({baseId}: {baseId: string}) {
   const {data: tables, isLoading} = api.base.getAllTablesBaseById.useQuery({id: baseId});
-
+  const [selectedTableId, setSelectedTableId] = useState<string>(tables?.[0]?.id ?? "");
 
   if(isLoading){
     return <LoadingPage />
@@ -18,7 +17,6 @@ export function TableMain({baseId}: {baseId: string}) {
     return <div>No table found</div>
   }
 
-  const [selectedTableId, setSelectedTableId] = useState<string>(tables[0].id);
 
   return (
     <div className="w-full flex flex-col">

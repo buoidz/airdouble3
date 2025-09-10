@@ -2,7 +2,6 @@ import React from "react";
 import { BookOpen, ChevronDown, ChevronRight, Download, House, Plus, ShoppingBag, SquareArrowOutUpRight, Star, UsersRound } from "lucide-react";
 import { api } from "~/utils/api";
 import { useRouter } from "next/router";
-import { utils } from "prettier/doc.js";
 
 export function HomeSideBar() {
   const utils = api.useUtils();

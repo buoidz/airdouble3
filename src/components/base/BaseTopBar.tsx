@@ -1,4 +1,5 @@
 import { CircleFadingArrowUp, Dock, History } from "lucide-react";
+import Image from "next/image";
 
 function getRainbowColorFromId(id: string) {
   const rainbowColors = [
@@ -27,7 +28,7 @@ export function BaseTopBar({baseName, baseId}: {baseName: string; baseId: string
     <div className="h-14 bg-white border-b border-gray-200 grid grid-cols-3 items-center px-4 sticky top-0 z-10">
       <div className="flex flex-row gap-2">
         <div className="rounded-md" style={{ backgroundColor: tableColor }}>
-          <img src="/airtable-white.png" alt="Airtable Logo" className="h-6 w-6 m-1" />
+          <Image src="/airtable-white.png" alt="Airtable Logo" className="h-6 w-6 m-1" />
         </div>
         <div className="text-black text-xl font-semibold">{baseName}</div>
       </div>

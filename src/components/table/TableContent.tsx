@@ -4,10 +4,7 @@ import { useMemo, useState } from "react";
 import { flexRender, getCoreRowModel, useReactTable, type CellContext } from "@tanstack/react-table";
 
 
-
-type RowData = {
-  [columnId: string]: string | number;
-};
+type RowData = Record<string, string | number>;
 
 function EditableCell({ initialValue, tableId, columnId, rowIndex }: { initialValue: string; tableId: string; columnId: string; rowIndex: number }) {
   const [value , setValue] = useState(initialValue);
@@ -61,7 +58,7 @@ export function TableContent({tableId}: {tableId: string}) {
             />;
           },      
       })) ?? [], 
-    [colData]
+    [colData, tableId]
   );
 
   const rows = useMemo(
