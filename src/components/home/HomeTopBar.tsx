@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export function HomeTopBar() {
   return (
-    <div className="flex h-14 items-center justify-between border border-gray-300 px-3 shadow-xs">
+    <div className="flex h-14 items-center justify-between border border-gray-300 px-3 shadow-xs sticky top-0 z-10">
       <div className="flex items-center">
         <MenuIcon className="text-gray-400" size={18} />
         <Link href="/" className="ml-4 text-xl font-bold">

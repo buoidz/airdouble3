@@ -2,12 +2,15 @@ import React from "react";
 import { BookOpen, ChevronDown, ChevronRight, Download, House, Plus, ShoppingBag, SquareArrowOutUpRight, Star, UsersRound } from "lucide-react";
 import { api } from "~/utils/api";
 import { useRouter } from "next/router";
+import { utils } from "prettier/doc.js";
 
 export function HomeSideBar() {
+  const utils = api.useUtils();
   const router = useRouter();
 
   const createTableMutation = api.base.createBase.useMutation({
     onSuccess: (newBase) => {
+      void utils.base.getAllBases.invalidate();
       void router.push(`/${newBase.id}`);
     },
     onError: (e) => {
@@ -21,7 +24,7 @@ export function HomeSideBar() {
   });
 
   return (
-    <div className="h-full w-75 border-r-2 border-gray-200 flex flex-col items-center justify-between">
+    <div className="h-full w-75 border-r-2 border-gray-200 flex flex-col items-center justify-between sticky top-14 z-10">
       <div className="flex flex-col items-center m-3 gap-1">
         
         <div className="h-10 w-70 bg-gray-100 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4">
@@ -80,7 +83,7 @@ export function HomeSideBar() {
 
         <button 
           className="mt-3 mb-3 h-8 w-68 bg-blue-600 text-white font-semibold flex flex-row items-center justify-center px-4 gap-2 rounded-md hover:cursor-pointer"
-          onClick={() => void createTableMutation.mutate({ name: "Untitled base" })}
+          onClick={() => void createTableMutation.mutate({ name: "Untitled Base" })}
         >
           <Plus size={20} />
           Create

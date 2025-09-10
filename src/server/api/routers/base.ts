@@ -168,4 +168,40 @@ export const baseRouter = createTRPCRouter({
 
       return table;
     }),
+
+    getAllTablesBaseById: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const currentUser = ctx.currentUser;
+      if (!currentUser) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to see this base.",
+        });
+      }
+      const base = await ctx.db.base.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!base || base.ownerId != currentUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to view this base.",
+        });
+      }
+
+      const table = await ctx.db.table.findMany({
+        where: { baseId: base.id },
+        orderBy: { createdAt: "asc" },
+      });
+
+      if (!table) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "No tables found in this base.",
+        });
+      }
+
+      return table;
+    }),
 });

@@ -7,7 +7,7 @@ import { HomeMain } from "~/components/home/HomeMain";
 import { LoadingPage } from "~/components/LoadingPage";
 
 const Home = () => {
-  const {isLoaded, isSignedIn, } = useUser();
+  const {isLoaded, isSignedIn} = useUser();
 
   if (!isLoaded) {
     return (
@@ -21,7 +21,7 @@ const Home = () => {
     <>
       <Head>
         <title>Airdouble</title>
-        <link rel="icon" href="airtable.png" />
+        <link rel="icon" href="/airtable.png" />
       </Head>
       <main>
         {(isSignedIn) ? (
