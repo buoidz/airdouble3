@@ -19,6 +19,7 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
   const utils = api.useUtils();
   const tableCorlor = lighten(0.4, getRainbowColorFromId(baseId));
 
+  const [openRenameMenu, setOpenRenameMenu] = useState(false);
   const [newTableName, setNewTableName] = useState("");
 
   const renameTableMutation = api.table.renameTable.useMutation({
@@ -37,7 +38,8 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
   });
 
   const handleRenameTable = () => {
-    renameTableMutation.mutate({ baseId, tableId: selectedTableId, newName: newTableName})
+    renameTableMutation.mutate({ baseId, tableId: selectedTableId, newName: newTableName});
+    setOpenRenameMenu(false);
   }
 
 
@@ -68,7 +70,7 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
                 
               </MenuButton>
 
-              {true ? (
+              {openRenameMenu ? (
                 <MenuItems 
                   anchor="bottom start"
                   className="px-4 py-3 z-20 [--anchor-gap:6px] w-85 border border-gray-300 rounded-md bg-white shadow-md flex flex-col items-start"
@@ -88,7 +90,10 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
                       <div className="w-full flex flex-row justify-end gap-2">
                         <button 
                           className="mt-2 p-2 rounded-md text-black text-xs hover:bg-gray-200"
-                          onClick={() => setNewTableName("")}
+                          onClick={() => {
+                            setNewTableName("");
+                            setOpenRenameMenu(false);
+                          }}
                         >
                           Cancel
                         </button>
@@ -115,6 +120,7 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
                         className="w-full p-2 rounded-md text-sm text-gray hover:bg-gray-100 text-start flex flex-row items-center gap-3"
                         onClick={(e) => {
                           e.stopPropagation()
+                          setOpenRenameMenu(true);
                         }}
                       >
                         <Pencil size={14}/>
