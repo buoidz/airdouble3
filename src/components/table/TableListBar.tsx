@@ -217,6 +217,7 @@ export function TableListBar({tables, baseId, selectedTableId, setSelectedTableI
           <button 
             className="text-xs font-normal text-gray-700 flex flex-row justify-between items-center gap-2 hover:cursor-pointer"
             onClick={handleAddTable}
+            disabled={addTableMutation.isPending}
             style={{ outline: "none"}}
           >
             {addTableMutation.isPending ? (
