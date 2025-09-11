@@ -109,6 +109,11 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
                         value={newTableName}
                         onChange={(e) => setNewTableName(e.target.value)}
                         onClick={(e) => e.stopPropagation()}
+                        onKeyDown={(e) => {
+                          if (e.key === ' ') {
+                            e.stopPropagation();
+                          }
+                        }}
                         placeholder="Enter table name..."
                         className="w-full p-2 border-2 border-blue-500 rounded-md"
                         style={{ outline: "none"}}
