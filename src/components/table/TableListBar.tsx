@@ -17,7 +17,7 @@ type TableListBarProps = {
 
 function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableListBarProps) {
   const utils = api.useUtils();
-  const tableCorlor = lighten(0.4, getRainbowColorFromId(baseId));
+  const tableCorlor = lighten(0.3, getRainbowColorFromId(baseId));
 
   const [openRenameMenu, setOpenRenameMenu] = useState(false);
   const [newTableName, setNewTableName] = useState("");
@@ -201,8 +201,8 @@ export function TableListBar({tables, baseId, selectedTableId, setSelectedTableI
     addTableMutation.mutate({ baseId })
   }
 
-  const tableCorlor = lighten(0.4, getRainbowColorFromId(baseId));
-
+  const tableCorlor = lighten(0.3, getRainbowColorFromId(baseId));
+  console.log(tableCorlor);
 
   return (
     <div 
