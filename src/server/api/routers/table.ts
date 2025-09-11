@@ -94,6 +94,36 @@ export const tableRouter = createTRPCRouter({
 
     }),
 
+  deleteTableById: publicProcedure
+    .input(z.object({ baseId: z.string(), tableId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const currentUser = ctx.currentUser
+      if (!currentUser) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: 'You must be logged in to add table'
+        })
+      }
+
+      const base = await ctx.db.base.findUnique({ where: {id: input.baseId} })
+      if (!base || base.ownerId != currentUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to alter this base.",
+        });
+      }
+
+      const table = await ctx.db.table.findUnique({ where: {id: input.tableId}})
+      if (!table) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Table not found.",
+        });
+      } 
+
+      await ctx.db.table.delete({ where: { id: input.tableId } });
+    }),
+
   getRowDataByTableId: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {

@@ -40,9 +40,34 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
   const handleRenameTable = () => {
     renameTableMutation.mutate({ baseId, tableId: selectedTableId, newName: newTableName});
     setOpenRenameMenu(false);
-  }
+  } ;
 
+  const deleteTableMutation = api.table.deleteTableById.useMutation({
+    onSuccess: () => {
+      void utils.base.getAllTablesBaseById.invalidate();
+      const currentIndex = tables.findIndex((t) => t.id === selectedTableId);
+      if (tables.length > 1) {
+        const nextTableId = tables[0]?.id;
+        if (nextTableId) {
+          setSelectedTableId(nextTableId);
+        }
+      } else {
+        setSelectedTableId("");
+      }
+    },
+    onError: (e) => {
+      const errorMessage = e.data?.zodError?.fieldErrors.name;
+      if (errorMessage) {
+        alert(errorMessage);
+      } else {
+        alert("Failed to delete table. Please try again later.");
+      }
+    },
+  });
 
+  const handleDeleteTable = () => {
+    deleteTableMutation.mutate({ baseId, tableId: selectedTableId });   
+  };
 
   return (
     <div className="h-full flex relative">
@@ -111,7 +136,7 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
                 ) : (
                 <MenuItems 
                   anchor="bottom start"
-                  className="px-4 py-3 z-20 [--anchor-gap:6px] h-25 w-85 border border-gray-300 rounded-md bg-white shadow-md flex flex-col items-start"
+                  className="px-4 py-3 z-20 [--anchor-gap:6px] w-85 border border-gray-300 rounded-md bg-white shadow-md flex flex-col items-start"
                   style={{ outline: "none"}}
                 >
                   <MenuItem>
@@ -131,7 +156,10 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
                     </div>
                   </MenuItem>
                   <MenuItem>
-                    <button className="w-full p-2 rounded-md text-sm text-gray hover:bg-gray-100 text-start flex flex-row items-center gap-3">
+                    <button 
+                      className="w-full p-2 rounded-md text-sm text-gray hover:bg-gray-100 text-start flex flex-row items-center gap-3"
+                      onClick={handleDeleteTable}
+                    >
                       <Trash2 size={14}/>
                       Delete Table
                     </button>
