@@ -44,7 +44,6 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
 
   const deleteTableMutation = api.table.deleteTableById.useMutation({
     onSuccess: () => {
-      void utils.base.getAllTablesBaseById.invalidate();
       const currentIndex = tables.findIndex((t) => t.id === selectedTableId);
       if (tables.length > 1) {
         const nextIndex = currentIndex < tables.length - 1 ? currentIndex + 1 : currentIndex - 1;
@@ -55,6 +54,7 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
       } else {
         setSelectedTableId("");
       }
+      void utils.base.getAllTablesBaseById.invalidate();
     },
     onError: (e) => {
       const errorMessage = e.data?.zodError?.fieldErrors.name;
