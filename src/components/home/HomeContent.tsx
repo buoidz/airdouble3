@@ -7,7 +7,7 @@ import relativeTime from "dayjs/plugin/relativeTime";
 
 dayjs.extend(relativeTime);
 
-function getRainbowColorFromId(id: string) {
+export function getRainbowColorFromId(id: string): string {
   const rainbowColors = [
     "#EF4444", // red-500
     "#F97316", // orange-500
@@ -24,7 +24,7 @@ function getRainbowColorFromId(id: string) {
   }
 
   const colorIndex = hash % rainbowColors.length;
-  return rainbowColors[colorIndex];
+  return rainbowColors[colorIndex] ?? "#EF4444";
 }
 
 

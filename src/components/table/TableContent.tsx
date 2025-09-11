@@ -118,7 +118,7 @@ export function TableContent({tableId}: {tableId: string}) {
                     <div
                       onMouseDown={header.getResizeHandler()}
                       onTouchStart={header.getResizeHandler()}
-                      className="absolute right-0 top-0 h-full w-1 bg-blue-500 cursor-col-resize opacity-0 group-hover:opacity-100 transition-opacity transition-duration-100"
+                      className="absolute right-0 top-0 h-full border-r border-blue-500 cursor-col-resize opacity-0 group-hover:opacity-100 transition-opacity transition-duration-100"
                     />
                   )}
                 </th>
