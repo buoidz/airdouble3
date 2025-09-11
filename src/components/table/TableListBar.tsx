@@ -47,7 +47,8 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
       void utils.base.getAllTablesBaseById.invalidate();
       const currentIndex = tables.findIndex((t) => t.id === selectedTableId);
       if (tables.length > 1) {
-        const nextTableId = tables[0]?.id;
+        const nextIndex = currentIndex < tables.length - 1 ? currentIndex + 1 : currentIndex - 1;
+        const nextTableId = tables[nextIndex]?.id;
         if (nextTableId) {
           setSelectedTableId(nextTableId);
         }
@@ -168,40 +169,28 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
               )}
             </Menu>
           ) : (
-            <button 
-              key={table.id} 
-              onClick={() => setSelectedTableId(table.id)}
-              className="pl-4 rounded-sm rounded-b-none border-b border-gray-300 text-xs font-normal text-gray-700  hover:cursor-pointer whitespace-nowrap"
-              onMouseEnter={(e) =>
-                (e.currentTarget.style.backgroundColor = rgba(getRainbowColorFromId(baseId), 0.2))
-              }
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor = tableCorlor)
-              }
-              style={{ backgroundColor: tableCorlor, outline: "none" }}
-            >
-              <div className="flex flex-row items-center justify-between gap-1">
-                {table.name}
-                <span className="ml-2"></span>
-                {showSeparator && <span className="h-4 border-l border-gray-300"></span>}
-              </div>
-              
-            </button> 
+            <Menu key={table.id} as="div">
+              <MenuButton
+                onClick={() => setSelectedTableId(table.id)}
+                className="h-full pl-4 rounded-sm rounded-b-none border-b border-gray-300 text-xs font-normal text-gray-700 whitespace-nowrap hover:cursor-pointer"
+                style={{ backgroundColor: tableCorlor, outline: 'none' }}
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.backgroundColor = rgba(getRainbowColorFromId(baseId), 0.2))
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = tableCorlor)
+                }
+              >
+                <div className="flex flex-row items-center justify-between gap-1">
+                  {table.name}
+                  <span className="ml-2"></span>
+                  {showSeparator && <span className="h-4 border-l border-gray-300"></span>}
+                </div>
+              </MenuButton>
+            </Menu> 
           ))
         )
       })}
-
-      {/* {openRenameMenu && anchorRect && (
-        <div 
-          className="z-30 p-4 absolute rounded-md border border-gray-300 bg-white" 
-          style={{
-            top: anchorRect.bottom - 50,
-            left: anchorRect.left - 55,
-          }}
-        >
-          rename menu!!!!!!!
-        </div>
-      )} */}
     </div>
   )
 }
