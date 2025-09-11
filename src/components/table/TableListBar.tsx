@@ -4,7 +4,7 @@ import { lighten, rgba } from "polished";
 import { api } from "~/utils/api";
 import { LoadingSpinner } from "../LoadingPage";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 
 
 type TableListBarProps = {
@@ -19,7 +19,6 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
   const utils = api.useUtils();
   const tableCorlor = lighten(0.4, getRainbowColorFromId(baseId));
 
-  const [openRenameMenu, setOpenRenameMenu] = useState(false);
   const [newTableName, setNewTableName] = useState("");
 
   const renameTableMutation = api.table.renameTable.useMutation({
@@ -116,7 +115,6 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
                         className="w-full p-2 rounded-md text-sm text-gray hover:bg-gray-100 text-start flex flex-row items-center gap-3"
                         onClick={(e) => {
                           e.stopPropagation()
-                          setOpenRenameMenu((prev) => !prev);
                         }}
                       >
                         <Pencil size={14}/>

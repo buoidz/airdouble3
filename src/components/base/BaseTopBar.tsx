@@ -29,9 +29,9 @@ export function BaseTopBar({baseName, baseId}: {baseName: string; baseId: string
           <History  className="m-1 text-gray-600 " size={14} />
         </button>
 
-        <button className="px-3 py-2 bg-gray-300 rounded-4xl flex flex-row items-center hover:cursor-pointer hover:shadow-xs ">
-          <CircleFadingArrowUp className="inline mr-2 text-white" size={16} />
-          <div className="text-xs text-white">Upgrade</div>
+        <button className="px-3 py-2 bg-gray-100 rounded-4xl flex flex-row items-center hover:cursor-pointer hover:shadow-xs ">
+          <CircleFadingArrowUp className="inline mr-2 text-black" size={16} />
+          <div className="text-xs text-black">Upgrade</div>
         </button>
 
         <button className="px-3 py-2 border border-gray-200 bg-white rounded-md flex flex-row items-center hover:cursor-pointer hover:shadow-xs ">
