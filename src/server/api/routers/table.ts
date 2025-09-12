@@ -3,7 +3,7 @@ import { ColumnType } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
-import { api } from "~/utils/api";
+
 
 const filterSchema = z.object({
   columnId: z.string(),
@@ -411,17 +411,17 @@ export const tableRouter = createTRPCRouter({
       });
     }),
 
-  getRowDataByOperations: publicProcedure
-    .input(z.object({
-      baseId: z.string(),
-      tableId: z.string(),
-      filter: z.array(filterSchema).default([]),
-      sort: z.array(sortSchema).default([]),
-      search: z.string().optional(),
-    }))
-    .query(async ({ ctx, input }) => {
+  // getRowDataByOperations: publicProcedure
+  //   .input(z.object({
+  //     baseId: z.string(),
+  //     tableId: z.string(),
+  //     filter: z.array(filterSchema).default([]),
+  //     sort: z.array(sortSchema).default([]),
+  //     search: z.string().optional(),
+  //   }))
+  //   .query(async ({ ctx, input }) => {
 
-    })
+  //   })
 
 
 })
