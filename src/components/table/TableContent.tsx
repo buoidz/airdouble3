@@ -247,7 +247,7 @@ export function TableContent({tableId}: {tableId: string}) {
     <div className="w-full h-screen overflow-auto">
       <div className="w-full h-full overflow-x-auto overflow-y-auto">
         <table className="border-collapse" style={{ width: 'max-content'}}>
-          <thead className="sticky top-0">
+          <thead>
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}> 
                 <th className="w-25 border-b border-gray-300"></th>
