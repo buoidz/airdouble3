@@ -1,7 +1,20 @@
+import { faker } from "@faker-js/faker";
 import { ColumnType } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
+import { api } from "~/utils/api";
+
+const filterSchema = z.object({
+  columnId: z.string(),
+  type: z.enum(['numGreaterThan', 'numSmallerThan', 'numEqualTo', 'textNotEmpty', 'textIsEmpty', 'textContains', 'textNotContains', 'textEqualTo']),
+  value: z.string().optional(),
+})
+
+const sortSchema = z.object({
+  columnId: z.string(),
+  type: z.enum(['numASC', 'numDESC', 'textASC', 'textDESC']),
+})
 
 export const tableRouter = createTRPCRouter({
   createTableByBaseId: publicProcedure
@@ -51,7 +64,7 @@ export const tableRouter = createTRPCRouter({
           data: createedColumn.map((column) => ({
             rowId: row.id,
             columnId: column.id,
-            textValue: "",
+            textValue: faker.lorem.words({min: 1, max: 3}),
           })),
         });
       } 
@@ -281,4 +294,134 @@ export const tableRouter = createTRPCRouter({
         return updatedCell;
       } 
     }),
+
+  addRow: publicProcedure
+    .input(z.object({
+      tableId: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const currentUser = ctx.currentUser;
+      if (!currentUser) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to update a cell.",
+        });
+      }
+
+      const table = await ctx.db.table.findUnique({
+        where: { id: input.tableId },
+      });
+      if (!table) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Table not found.",
+        });
+      }
+      if (table.ownerId !== currentUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to update this table.",
+        });
+      }   
+
+      const columns = await ctx.db.column.findMany({
+        where: { tableId: input.tableId }
+      })
+      if (!columns) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Table columns not found.",
+        })
+      }
+
+      const oldRows = await ctx.db.row.findFirst({
+        where: { tableId: input.tableId },
+        orderBy: { order: "desc" }
+      })
+      
+      const newOrder = oldRows ? oldRows.order + 1 : 0;
+      const newRow = await ctx.db.row.create({
+        data: { tableId: input.tableId, order: newOrder }
+      })
+
+      await ctx.db.cell.createMany({
+        data: columns.map((column) => ({
+          rowId: newRow.id,
+          columnId: column.id,
+          textValue: column.type === ColumnType.TEXT ? faker.lorem.words({min: 1, max: 3}) : null,
+          numberValue: column.type === ColumnType.NUMBER ? faker.number.int({ max: 1000000000000}) : null,
+        })),
+      });
+    }),
+
+
+  addColumns: publicProcedure
+    .input(z.object({
+      tableId: z.string(),
+      name: z.string(),
+      type: z.nativeEnum(ColumnType),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const currentUser = ctx.currentUser;
+      if (!currentUser) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to update a cell.",
+        });
+      }
+
+      const table = await ctx.db.table.findUnique({
+        where: { id: input.tableId },
+      });
+      if (!table) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Table not found.",
+        });
+      }
+      if (table.ownerId !== currentUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to update this table.",
+        });
+      }   
+
+      const oldCols = await ctx.db.column.findFirst({
+        where: { tableId: input.tableId },
+        orderBy: { order: "desc" }
+      })
+
+      const newOrder = oldCols ? oldCols.order + 1 : 0;
+
+      const newCol = await ctx.db.column.create({
+        data: { tableId: input.tableId, name: input.name, type: input.type, order: newOrder}
+      })
+
+      const rows = await ctx.db.row.findMany({
+        where: { tableId: input.tableId },
+      })
+
+      await ctx.db.cell.createMany({
+        data: rows.map((rows) => ({
+          rowId: rows.id,
+          columnId: newCol.id,
+          textValue: newCol.type === ColumnType.TEXT ? faker.lorem.words({min: 1, max: 3}) : null,
+          numberValue: newCol.type === ColumnType.NUMBER ? faker.number.int({ max: 1000000000000}) : null,
+        })),
+      });
+    }),
+
+  getRowDataByOperations: publicProcedure
+    .input(z.object({
+      baseId: z.string(),
+      tableId: z.string(),
+      filter: z.array(filterSchema).default([]),
+      sort: z.array(sortSchema).default([]),
+      search: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+
+    })
+
+
 })

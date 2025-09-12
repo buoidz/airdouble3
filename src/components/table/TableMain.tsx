@@ -28,7 +28,7 @@ export function TableMain({baseId}: {baseId: string}) {
       <TableListBar tables={tableProps} baseId={baseId} selectedTableId={selectedTableId} setSelectedTableId={setSelectedTableId}/>
       <TableToolBar /> 
       
-      <div className="flex flex-row overflow-hidden"  style={{ height: `calc(100vh - 56px - 32px - 48px)` }}>
+      <div className="h-full flex flex-row pl-85"  style={{ height: `calc(100vh - 56px - 32px - 48px)` }}>
         <TableViewSideBar />
         <TableContent tableId={selectedTableId} />
       </div>

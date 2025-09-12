@@ -228,7 +228,7 @@ export function TableListBar({tables, baseId, selectedTableId, setSelectedTableI
 
   return (
     <div 
-      className="h-8 flex flex-row items-center sticky top-14 z-10"
+      className="h-8 flex flex-row items-center sticky top-14 z-50"
       style={{ backgroundColor: tableCorlor }}
     > 
       <TableMenu tables={tables} baseId={baseId} selectedTableId={selectedTableId} setSelectedTableId={setSelectedTableId}/>

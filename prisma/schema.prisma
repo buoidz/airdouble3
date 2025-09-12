@@ -72,7 +72,7 @@ model Column {
 
     cells     Cell[]
 
-    @@unique([tableId, name])
+    @@unique([tableId])
     @@index([tableId, order])
     @@index([tableId, type])
     @@map("columns")

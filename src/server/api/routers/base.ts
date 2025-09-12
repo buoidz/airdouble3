@@ -1,6 +1,8 @@
 import { ColumnType } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { faker } from '@faker-js/faker';
+
 
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
@@ -40,7 +42,7 @@ export const baseRouter = createTRPCRouter({
         });
                 
         // 4. Create three empty rows in the first table with empty cells for each column
-        const createedColumn = await ctx.db.column.findMany({where: {tableId: firstTable.id}});
+        const createdColumn = await ctx.db.column.findMany({where: {tableId: firstTable.id}});
 
         for (let i = 0; i < 3; i++) {
           const row = await ctx.db.row.create({
@@ -48,10 +50,10 @@ export const baseRouter = createTRPCRouter({
           });
 
           await ctx.db.cell.createMany({
-            data: createedColumn.map((column) => ({
+            data: createdColumn.map((column) => ({
               rowId: row.id,
               columnId: column.id,
-              textValue: "",
+              textValue: faker.lorem.words({min: 1, max: 3}),
             })),
           });
         } 
@@ -169,38 +171,38 @@ export const baseRouter = createTRPCRouter({
     }),
 
     getAllTablesBaseById: publicProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const currentUser = ctx.currentUser;
-      if (!currentUser) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "You must be logged in to see this base.",
+      .input(z.object({ id: z.string() }))
+      .query(async ({ ctx, input }) => {
+        const currentUser = ctx.currentUser;
+        if (!currentUser) {
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: "You must be logged in to see this base.",
+          });
+        }
+        const base = await ctx.db.base.findUnique({
+          where: { id: input.id },
         });
-      }
-      const base = await ctx.db.base.findUnique({
-        where: { id: input.id },
-      });
 
-      if (!base || base.ownerId != currentUser.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to view this base.",
+        if (!base || base.ownerId != currentUser.id) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "You do not have permission to view this base.",
+          });
+        }
+
+        const table = await ctx.db.table.findMany({
+          where: { baseId: base.id },
+          orderBy: { createdAt: "asc" },
         });
-      }
 
-      const table = await ctx.db.table.findMany({
-        where: { baseId: base.id },
-        orderBy: { createdAt: "asc" },
-      });
+        if (!table) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "No tables found in this base.",
+          });
+        }
 
-      if (!table) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "No tables found in this base.",
-        });
-      }
-
-      return table;
-    }),
+        return table;
+      }),
 });

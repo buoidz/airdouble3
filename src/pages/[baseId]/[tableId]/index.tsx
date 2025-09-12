@@ -26,7 +26,7 @@ export default function TablePage() {
         </main>
       </>
 
-  );
+    );
   };
   if (!base) return <div>Base not found</div>;
   if (!tables || tables.length === 0) return <div>No tables found.</div>;
@@ -37,7 +37,7 @@ export default function TablePage() {
         <title>{base.name}</title>
         <link rel="icon" href="/airtable.png" />
       </Head>
-      <main className="h-screen flex flex-row">
+      <main className="h-screen flex flex-row pl-14">
         <BaseSideBar />
         <div className="flex flex-col w-full">
           <BaseTopBar baseName={base.name} baseId={baseId} />

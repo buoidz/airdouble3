@@ -5,7 +5,7 @@ import Link from "next/link";
 
 export function BaseSideBar() {
   return (
-    <div className="w-14 px-2 py-4 border-r border-gray-200 items-center justify-between flex flex-col sticky top-0 z-10">
+    <div className="h-full w-14 px-2 py-4 border-r border-gray-200 items-center justify-between flex flex-col fixed left-0 top-0">
       <Link href="/" className="group relative flex items-center justify-center h-6 w-6">
         <Image 
           src="/airtable-black.svg" 

@@ -2,7 +2,7 @@ import { ArrowUpDown, ChevronDown, ExternalLink, EyeOff, ListChevronsUpDown, Lis
 
 export function TableToolBar() {
   return (
-    <div className="h-12 flex flex-row justify-between items-center border-b border-gray-300 sticky top-22 z-10">
+    <div className="h-12 flex flex-row justify-between items-center border-b border-gray-300 bg-white  sticky top-22 z-50">
 
       <div className="p-5 flex flex-row items-center">
         <button className="p-2 rounded-md hover:bg-gray-100">
