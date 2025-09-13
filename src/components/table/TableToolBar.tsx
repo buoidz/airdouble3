@@ -1,8 +1,7 @@
-import { ArrowUpDown, ChevronDown, ChevronDownIcon, ExternalLink, EyeOff, ListChevronsUpDown, ListFilter, MenuIcon, PaintBucket, PlusIcon, Search, SquareLibrary, Table2, Trash } from "lucide-react";
+import { ArrowUpDown, ChevronDown, ExternalLink, EyeOff, ListChevronsUpDown, ListFilter, MenuIcon, PaintBucket, Search, SquareLibrary, Table2, Trash } from "lucide-react";
 import type { FilterConfig, FilterType, SortConfig } from "./TableMain";
 import { api } from "~/utils/api";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
-import { useState } from "react";
 
 type FilterMenuProps = {
   tableId: string;
@@ -24,9 +23,9 @@ const filterTypesNumber: Record<string, string> = {
   numSmallerThan: "smaller than",
   numEqualTo: "equals",
 };
-const filterConditionAll: Record<string, string> = {
+const filterConditionAll: Record<"AND" | "OR", string> = {
   AND: "and",
-  Or: "or",
+  OR: "or",
 };
 
 function FilterMenu({
@@ -38,11 +37,10 @@ function FilterMenu({
 }: FilterMenuProps) {
 
   const {data: columns} = api.table.getColumnDataByTableId.useQuery({id: tableId});
-  if (!columns) return <div>No columns</div>
 
 
   const addFilter = () => {
-    const availableColumn = columns.find((col) => !filterConfig.some((f) => f.columnId === col.id));
+    const availableColumn = columns?.find((col) => !filterConfig.some((f) => f.columnId === col.id));
     if (availableColumn) {
       setFilterConfig([...filterConfig, {
         columnId: availableColumn.id,
@@ -87,7 +85,7 @@ function FilterMenu({
       >
         <div className="p-2 text-xs text-gray-500">In this view, show records</div>
         {filterConfig.map((filter, index) => {
-          const column = columns.find(col => col.id === filter.columnId);
+          const column = columns?.find(col => col.id === filter.columnId);
           const types = column?.type === "TEXT" ? filterTypesText : filterTypesNumber;
 
           return (
@@ -99,11 +97,14 @@ function FilterMenu({
                   </div>
                 )}
                 {index===1 && ( 
-                  <select className="text-xs w-full p-2 flex-1 border border-gray-200 rounded appearance-none">
-                    <option value="">{filterConditionAll[filterCondition]}</option>
+                  <select 
+                    value={filterCondition}
+                    className="text-xs w-full p-2 flex-1 border border-gray-200 rounded appearance-none" 
+                    onChange={(e) => setFilterCondition(e.target.value as "AND" | "OR")}
+                  >
                     {Object.keys(filterConditionAll).map((key) => (
-                      <option key={key} value={key}>{filterConditionAll[key]}</option>
-                  ))}
+                      <option key={key} value={key}>{filterConditionAll[key as "AND" | "OR"]}</option>
+                    ))}
                   </select>
                 )}
                 {index>=2 && ( 
@@ -119,7 +120,7 @@ function FilterMenu({
                 className="text-xs border-l border-t border-b border-gray-200 rounded-l p-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none"
               >
                 <option value="">Select column</option>
-                {columns.map((col) => (
+                {columns?.map((col) => (
                   <option key={col.id} value={col.id}>{col.name}</option>
                 ))}
               </select>
