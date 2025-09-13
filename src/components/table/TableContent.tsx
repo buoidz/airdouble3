@@ -5,6 +5,7 @@ import { flexRender, getCoreRowModel, useReactTable, type CellContext } from "@t
 import { Baseline, Hash, Plus } from "lucide-react";
 import { ColumnType } from "@prisma/client";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
+import type { FilterConfig, SortConfig } from "./TableMain";
 
 
 type RowData = Record<string, string | number>;
@@ -159,12 +160,23 @@ function AddColumnMenu({tableId}: {tableId: string}) {
   )
 }
 
+type TableContentProps = {
+  tableId: string,
+  filterConfig: FilterConfig[],
+  filterCondition: "AND" | "OR",
+  sortConfig: SortConfig[],
+}
 
-export function TableContent({tableId}: {tableId: string}) {
+export function TableContent({tableId, filterConfig, filterCondition, sortConfig}: TableContentProps) {
   const utils = api.useUtils();
 
   const {data: colData, isLoading: colLoading} = api.table.getColumnDataByTableId.useQuery({id: tableId});
-  const {data: rowData, isLoading: rowLoading} = api.table.getRowDataByTableId.useQuery({id: tableId});
+  const {data: rowData, isLoading: rowLoading} = api.table.getRowDataByOperations.useQuery({
+    tableId: tableId,
+    filters: filterConfig,
+    filterCondition: filterCondition,
+    sorts: sortConfig,
+  });
 
   const columns = useMemo(
     () => 
@@ -238,14 +250,14 @@ export function TableContent({tableId}: {tableId: string}) {
   if(colLoading || rowLoading){
     return <LoadingPage />
   }
-  if(!rowData || rowData.length === 0 || !colData || colData.length === 0){
+  if(!rowData || !colData || colData.length === 0){
     return <div>No data found</div>
   }
 
 
   return (
-    <div className="w-full h-screen overflow-auto">
-      <div className="w-full h-full overflow-x-auto overflow-y-auto">
+    <div className="w-full h-screen">
+      <div className="w-full h-full  overflow-y-auto">
         <table className="border-collapse" style={{ width: 'max-content'}}>
           <thead>
             {table.getHeaderGroups().map(headerGroup => (

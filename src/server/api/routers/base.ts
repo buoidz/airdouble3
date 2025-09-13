@@ -169,6 +169,7 @@ export const baseRouter = createTRPCRouter({
 
       return table;
     }),
+    
 
     getAllTablesBaseById: publicProcedure
       .input(z.object({ id: z.string() }))

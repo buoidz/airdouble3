@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { ColumnType } from "@prisma/client";
+import { ColumnType, Prisma } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
@@ -411,17 +411,143 @@ export const tableRouter = createTRPCRouter({
       });
     }),
 
-  // getRowDataByOperations: publicProcedure
-  //   .input(z.object({
-  //     baseId: z.string(),
-  //     tableId: z.string(),
-  //     filter: z.array(filterSchema).default([]),
-  //     sort: z.array(sortSchema).default([]),
-  //     search: z.string().optional(),
-  //   }))
-  //   .query(async ({ ctx, input }) => {
+  getRowDataByOperations: publicProcedure
+    .input(z.object({
+      tableId: z.string(),
+      filters: z.array(filterSchema).default([]),
+      filterCondition: z.enum(["AND", "OR"]),
+      sorts: z.array(sortSchema).default([]),
+      search: z.string().optional(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const currentUser = ctx.currentUser;
+      if (!currentUser) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to update a cell.",
+        });
+      }
 
-  //   })
+      const table = await ctx.db.table.findUnique({
+        where: { id: input.tableId },
+        include: { 
+          columns: {
+            orderBy: { order: 'asc' }
+          }
+        }
+      });
+      if (!table) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Table not found.",
+        });
+      }
+      if (table.ownerId !== currentUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to update this table.",
+        });
+      }   
+
+      const whereConditions: Prisma.RowWhereInput[] = [
+        { tableId: input.tableId }
+      ];
+
+      for (const filter of input.filters) {
+        const cellCondition: Prisma.CellWhereInput = {columnId: filter.columnId};
+
+        switch (filter.type) {
+          case "numEqualTo":
+            cellCondition.numberValue = { equals: Number(filter.value) }
+            break;
+          case "numGreaterThan":
+            cellCondition.numberValue = { gt: Number(filter.value) }
+            break;
+          case "numSmallerThan":
+            cellCondition.numberValue = { lt: Number(filter.value) }
+            break;
+          case "textContains":
+            cellCondition.textValue = { contains: filter.value }
+            break;
+          case "textEqualTo":
+            cellCondition.textValue = { equals: filter.value }
+            break;
+          case "textNotContains":
+            cellCondition.textValue = { not: {contains: filter.value }}
+            break;
+          case "textIsEmpty":
+            cellCondition.textValue = { equals: "" }
+            break;
+          case "textNotEmpty":
+            cellCondition.textValue = { not: "" }
+            break;
+        }
+
+        whereConditions.push({
+          cells: { some: cellCondition }
+        });
+
+      }
+
+      const whereClause: Prisma.RowWhereInput = 
+        whereConditions.length > 1 
+        ? { [input.filterCondition]: whereConditions } 
+        : whereConditions[0] ?? { tableId: input.tableId };        
+        
+      const rows = await ctx.db.row.findMany({
+        where: whereClause,
+        include: {
+          cells: {
+            include: {
+              column: true
+            }
+          }
+        }
+      });
+
+
+      if (input.sorts) {
+        rows.sort((a, b) => {
+          for (const sort of input.sorts) {
+
+            const column = table.columns.find(c => c.id === sort.columnId);
+            if (!column) continue;
+
+            const aCell = a.cells.find(c => c.columnId === sort.columnId);
+            const bCell = b.cells.find(c => c.columnId === sort.columnId);
+          
+            let comparison = 0;
+            if (sort.type === "textASC") {
+              comparison = String(aCell?.textValue).toLowerCase().localeCompare(String(bCell?.textValue).toLowerCase())
+            } else if (sort.type === "textDESC") {
+              comparison = - String(aCell?.textValue).toLowerCase().localeCompare(String(bCell?.textValue).toLowerCase())
+            } else if (sort.type === "numASC") {
+              comparison = Number(aCell?.numberValue) - Number(bCell?.numberValue)
+            } else if (sort.type === "numDESC") {
+              comparison = Number(bCell?.numberValue) - Number(aCell?.numberValue)
+            }
+
+            if (comparison !== 0) {
+              return comparison;
+            }
+          }
+
+          return 0;
+        })
+      }
+
+      const cleanRows = rows.map(row => ({
+        ...row,
+        cells: row.cells.map (cell => ({
+          id: cell.id,
+          columnId: cell.columnId,
+          textValue: cell.textValue,
+          numberValue: cell.numberValue,
+        }))
+      }))
+
+      return cleanRows;
+    })
 
 
 })
