@@ -1,5 +1,5 @@
 import { faker } from "@faker-js/faker";
-import { ColumnType, Prisma } from "@prisma/client";
+import { ColumnType } from "@prisma/client";
 import { TRPCError } from "@trpc/server";
 import z from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
@@ -463,11 +463,13 @@ export const tableRouter = createTRPCRouter({
 
       // filtering
       const filterFragments: string[] = [];
-      const filterParams: any[] = [input.tableId]; // $1 = tableId
+      const filterParams: (string | number)[] = [input.tableId]; // $1 = tableId
       let paramIndex = 2;
 
       input.filters.forEach((filter) => {
         let condition = "";
+        if (filter.value === undefined || filter.value === null) return;
+        
         switch (filter.type) {
           case "numEqualTo":
             condition = `"numberValue" = $${paramIndex++}`;

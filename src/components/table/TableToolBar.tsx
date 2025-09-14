@@ -278,6 +278,7 @@ export function SortMenu({
             <div className="py-2 flex flex-col items-start">
               {columns?.map((col) => (
                 <button 
+                  key={col.id}
                   className="px-2 py-1 w-full text-start text-sm text-black rounded hover:bg-gray-100"
                   onClick={() => {addSort(col.id, col.type)}}
                 >
