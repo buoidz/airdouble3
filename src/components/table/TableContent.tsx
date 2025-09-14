@@ -6,6 +6,7 @@ import { Baseline, Hash, Plus } from "lucide-react";
 import { ColumnType } from "@prisma/client";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import type { FilterConfig, SortConfig } from "./TableMain";
+import type { RowDataRaw } from "~/server/api/routers/table";
 
 
 type RowData = Record<string, string | number>;
@@ -167,11 +168,12 @@ type TableContentProps = {
   sortConfig: SortConfig[],
 }
 
+
 export function TableContent({tableId, filterConfig, filterCondition, sortConfig}: TableContentProps) {
   const utils = api.useUtils();
 
   const {data: colData, isLoading: colLoading} = api.table.getColumnDataByTableId.useQuery({id: tableId});
-  const {data: rowData, isLoading: rowLoading} = api.table.getRowDataByOperations.useQuery({
+  const {data: rowData, isLoading: rowLoading} = api.table.getRowDataByOperations.useQuery<RowDataRaw[]>({
     tableId: tableId,
     filters: filterConfig,
     filterCondition: filterCondition,
@@ -202,7 +204,7 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
 
   const rows = useMemo(
     () => 
-      rowData?.map((row) => {
+      rowData?.map((row: RowDataRaw) => {
         const rowObj: RowData = {};
         row.cells.forEach((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null }) => {
           if(cell.textValue !== null){

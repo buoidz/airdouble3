@@ -16,6 +16,18 @@ const sortSchema = z.object({
   type: z.enum(['numASC', 'numDESC', 'textASC', 'textDESC']),
 })
 
+export type CellData = {
+  id: string;
+  columnId: string;
+  textValue: string | null;
+  numberValue: number | null;
+};
+
+export type RowDataRaw = {
+  id: string;
+  cells: CellData[];
+};
+
 export const tableRouter = createTRPCRouter({
   createTableByBaseId: publicProcedure
     .input(z.object({ baseId: z.string() }))
@@ -551,9 +563,9 @@ export const tableRouter = createTRPCRouter({
       `;
 
 
-      const rows = await ctx.db.$queryRawUnsafe<any[]>(sql, ...filterParams);
+      const rows = await ctx.db.$queryRawUnsafe<RowDataRaw[]>(sql, ...filterParams);
 
-      const cleanRows = rows.map(row => ({
+      const cleanRows: RowDataRaw[] = rows.map(row => ({
         ...row,
         cells: row.cells.map((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null }) => ({
           id: cell.id,

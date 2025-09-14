@@ -107,7 +107,7 @@ function FilterMenu({
           const types = column?.type === "TEXT" ? filterTypesText : filterTypesNumber;
 
           return (
-            <div key={index} className="px-2 py-1 flex">
+            <div key={filter.columnId} className="px-2 py-1 flex">
               <div className="w-full px-2">
                 {index===0 && ( 
                   <div className="text-xs p-2 flex-1">
@@ -279,7 +279,7 @@ export function SortMenu({
               {columns?.map((col) => (
                 <button 
                   className="px-2 py-1 w-full text-start text-sm text-black rounded hover:bg-gray-100"
-                  onClick={(e) => {addSort(col.id, col.type)}}
+                  onClick={() => {addSort(col.id, col.type)}}
                 >
                   {col.name}
                 </button>
@@ -302,7 +302,7 @@ export function SortMenu({
                 const types = column?.type === "TEXT" ? sortTypesText : sortTypesNumber;
 
                 return (
-                  <div className="pt-2 flex flex-row gap-2">
+                  <div key={sort.columnId} className="pt-2 flex flex-row gap-2">
 
                     <select
                       value={sort.columnId}
