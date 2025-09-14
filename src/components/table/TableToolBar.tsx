@@ -76,12 +76,25 @@ function FilterMenu({
     setFilterConfig(filterConfig.filter((_, i) => i !== index));
     void utils.table.getRowDataByOperations.invalidate();
   };
+
+  const filteredColumnNames = filterConfig
+    .map((filter) => columns?.find((col) => col.id === filter.columnId)?.name)
+    .filter((name): name is string => !!name)
+    .join(', ');
  
   return (
     <Menu>
-      <MenuButton className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 focus:ring-0 focus:outline-none">
+      <MenuButton 
+        className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white focus:ring-0 focus:outline-none ${
+          filterConfig.length > 0 ? 'bg-green-200  hover:border-gray-300' : 'hover:bg-gray-100'
+        }`}
+      >
         <ListFilter size={14} />
-        <div className="text-xs ">Filter</div>        
+        {filterConfig.length > 0 ? (
+          <span>Filtered by {filteredColumnNames ?? 'columns'}</span>
+        ) : (
+          <span>Filter</span>
+        )}     
       </MenuButton>
 
       <MenuItems 
@@ -231,16 +244,26 @@ export function SortMenu({
     setSortConfig(sortConfig.filter((_, i) => i !== index));
     void utils.table.getRowDataByOperations.invalidate();
   };
-
   
-
+  const sortedColumnNames = sortConfig
+    .map((sort) => columns?.find((col) => col.id === sort.columnId)?.name)
+    .filter((name): name is string => !!name)
+    .join(', ');
 
   return (
     <>
       <Menu>
-        <MenuButton className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 focus:ring-0 focus:outline-none">
+        <MenuButton 
+          className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white focus:ring-0 focus:outline-none ${
+            sortConfig.length > 0 ? 'bg-red-100  hover:border-gray-300' : 'hover:bg-gray-100'
+          }`}
+        >
           <ArrowUpDown size={14} />
-          <div className="text-xs ">Sort</div>        
+          {sortConfig.length > 0 ? (
+            <span>Sorted by {sortedColumnNames ?? 'columns'}</span>
+          ) : (
+            <span>Sort</span>
+          )}              
         </MenuButton>
         {sortConfig.length === 0 ? (
           <MenuItems 

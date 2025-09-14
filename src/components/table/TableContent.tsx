@@ -246,6 +246,25 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
     void addRowMutation.mutate({ tableId: tableId })
   }
 
+  const filteredColumnIds = useMemo(
+    () => new Set(filterConfig.map(filter => filter.columnId)),
+    [filterConfig]
+  );
+
+  const sortedColumnIds = useMemo(
+    () => new Set(sortConfig.map(sort => sort.columnId)),
+    [sortConfig]
+  );
+
+  const isColumnHighlightedFilter = (columnId: string) => {
+    return filteredColumnIds.has(columnId);
+  };
+
+  const isColumnHighlightedSort = (columnId: string) => {
+    return sortedColumnIds.has(columnId);
+  };
+
+
   
   if(colLoading || rowLoading){
     return <LoadingPage />
@@ -253,6 +272,7 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
   if(!rowData || !colData || colData.length === 0){
     return <div>No data found</div>
   }
+
 
 
   return (
@@ -263,24 +283,35 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}> 
                 <th className="w-25 border-b border-gray-300"></th>
-                {headerGroup.headers.map((header) => (
-                  <th 
-                    key={header.id} 
-                    className="relative group border-r border-b border-gray-300 px-4 py-2"
-                    style={{ width: header.getSize() }}
-                  >
-                    <div className="text-left text-sm font-medium text-black truncate whitespace-nowrap overflow-hidden text-ellipsis">
-                      {flexRender(header.column.columnDef.header, header.getContext())}
-                    </div>
-                    {header.column.getCanResize() && (
-                      <div
-                        onMouseDown={header.getResizeHandler()}
-                        onTouchStart={header.getResizeHandler()}
-                        className="absolute right-0 top-0 h-full w-1 bg-blue-500 cursor-col-resize opacity-0 group-hover:opacity-100 transition-opacity transition-duration-100"
-                      />
-                    )}
-                  </th>
-                ))}
+                {headerGroup.headers.map((header) => { 
+                  const isHighlightedFilter = isColumnHighlightedFilter(header.column.id)
+                  const isHighlightedSort = isColumnHighlightedSort(header.column.id);
+
+                  const getBgColor = () => {
+                    if (isHighlightedSort) return 'bg-red-50';
+                    if (isHighlightedFilter) return 'bg-green-50';
+                    return '';
+                  };
+
+                  return (
+                    <th 
+                      key={header.id} 
+                      className={`relative group border-r border-b border-gray-300 px-4 py-2 ${getBgColor()}`}
+                      style={{ width: header.getSize() }}
+                    >
+                      <div className="text-left text-sm font-medium text-black truncate whitespace-nowrap overflow-hidden text-ellipsis">
+                        {flexRender(header.column.columnDef.header, header.getContext())}
+                      </div>
+                      {header.column.getCanResize() && (
+                        <div
+                          onMouseDown={header.getResizeHandler()}
+                          onTouchStart={header.getResizeHandler()}
+                          className="absolute right-0 top-0 h-full w-1 bg-blue-500 cursor-col-resize opacity-0 group-hover:opacity-100 transition-opacity transition-duration-100"
+                        />
+                      )}
+                    </th>
+                  )
+                })}
                 <th className="border-b border-r border-gray-300 hover:bg-gray-100">
                   <AddColumnMenu tableId={tableId}/>
                 </th>
@@ -292,15 +323,25 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
             {table.getRowModel().rows.map((row, index) => (
               <tr key={row.id}>
                 <th className="text-xs font-normal text-gray-500 w-25 pr-6 border-b border-gray-300">{index}</th>
-                {row.getVisibleCells().map(cell => (
-                  <td 
-                    key={cell.id} 
-                    className="border-r border-b border-gray-300 px-4 py-2 text-sm text-gray-800"
-                    style={{ width: cell.column.getSize() }}
-                  >
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
+                {row.getVisibleCells().map(cell => {
+                  const isHighlightedFilter = isColumnHighlightedFilter(cell.column.id)
+                  const isHighlightedSort = isColumnHighlightedSort(cell.column.id);
+
+                  const getBgColor = () => {
+                    if (isHighlightedSort) return 'bg-red-50';
+                    if (isHighlightedFilter) return 'bg-green-50';
+                    return '';
+                  };
+                  return (
+                    <td 
+                      key={cell.id} 
+                      className={`border-r border-b border-gray-300 px-4 py-2 text-sm text-gray-800 ${getBgColor()}`}
+                      style={{ width: cell.column.getSize() }}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  )
+                })}
               </tr>
             ))}
           </tbody>
