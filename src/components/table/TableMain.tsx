@@ -6,7 +6,7 @@ import { api } from "~/utils/api";
 import { LoadingPage } from "../LoadingPage";
 import { useEffect, useState } from "react";
 
-type SortType = "textASC" | "textDESC" | "numASC" | "numDESC";
+export type SortType = "textASC" | "textDESC" | "numASC" | "numDESC";
 
 export interface SortConfig {
   columnId: string;

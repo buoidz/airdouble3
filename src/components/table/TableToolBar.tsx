@@ -1,7 +1,8 @@
-import { ArrowUpDown, ChevronDown, ExternalLink, EyeOff, ListChevronsUpDown, ListFilter, MenuIcon, PaintBucket, Search, SquareLibrary, Table2, Trash } from "lucide-react";
-import type { FilterConfig, FilterType, SortConfig } from "./TableMain";
+import { ArrowUpDown, ChevronDown, CircleQuestionMark, ExternalLink, EyeOff, ListChevronsUpDown, ListFilter, MenuIcon, PaintBucket, Search, SquareLibrary, Table2, Trash, X } from "lucide-react";
+import type { FilterConfig, FilterType, SortConfig, SortType } from "./TableMain";
 import { api } from "~/utils/api";
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
+import { Menu, MenuButton, MenuItems } from '@headlessui/react'
+import { ColumnType } from "@prisma/client";
 
 type FilterMenuProps = {
   tableId: string;
@@ -35,6 +36,7 @@ function FilterMenu({
   filterCondition,
   setFilterCondition,
 }: FilterMenuProps) {
+  const utils = api.useUtils();
 
   const {data: columns} = api.table.getColumnDataByTableId.useQuery({id: tableId});
 
@@ -48,6 +50,7 @@ function FilterMenu({
         value: ''
       }]);
     }
+    void utils.table.getRowDataByOperations.invalidate();
   };
 
   const updateFilter = (index: number, field: keyof FilterConfig, val: string) => {
@@ -66,10 +69,12 @@ function FilterMenu({
 
       return newFilters;
     });
+    void utils.table.getRowDataByOperations.invalidate();
   };
 
   const removeFilter = (index: number) => {
     setFilterConfig(filterConfig.filter((_, i) => i !== index));
+    void utils.table.getRowDataByOperations.invalidate();
   };
  
   return (
@@ -163,6 +168,15 @@ function FilterMenu({
   )
 }
 
+const sortTypesText: Record<string, string> = {
+  textASC: "A → Z",
+  textDESC: "Z → A",
+};
+const sortTypesNumber: Record<string, string> = {
+  numASC: "1 → 9",
+  numDESC: "9 → 1",
+};
+
 type SortMenuProps = {
   tableId: string;
   sortConfig: SortConfig[];
@@ -173,8 +187,144 @@ export function SortMenu({
   tableId,
   sortConfig,
   setSortConfig,
-}: SortMenuProps) {  return (
-    <div></div>
+}: SortMenuProps) {  
+  const utils = api.useUtils();
+  const {data: columns} = api.table.getColumnDataByTableId.useQuery({id: tableId});
+
+  const addSort = (columnId: string, colType: ColumnType) => {
+    setSortConfig([...sortConfig, {
+      columnId: columnId,
+      type: colType===ColumnType.NUMBER ? "numASC" : "textASC",
+    }]);
+    void utils.table.getRowDataByOperations.invalidate();
+  };
+
+  const addSortNoColumnId = () => {
+    const availableColumn = columns?.find((col) => !sortConfig.some((f) => f.columnId === col.id));
+    if (availableColumn) {
+      setSortConfig([...sortConfig, {
+        columnId: availableColumn.id,
+        type: availableColumn.type === "TEXT" ? 'textASC' : 'numASC',
+      }]);
+    }
+    void utils.table.getRowDataByOperations.invalidate();
+  };
+
+  const updateSort = (index: number, field: keyof SortConfig, val: string) => {
+    setSortConfig((prev) => {
+      const newSorts = [...prev];
+
+      if (!newSorts[index]) return prev;
+
+      if (field === "type") {
+        newSorts[index].type = val as SortType;
+      } else if (field === "columnId") {
+        newSorts[index].columnId = val;
+      }
+
+      return newSorts;
+    });
+    void utils.table.getRowDataByOperations.invalidate();
+  };
+
+  const removeSort = (index: number) => {
+    setSortConfig(sortConfig.filter((_, i) => i !== index));
+    void utils.table.getRowDataByOperations.invalidate();
+  };
+
+  
+
+
+  return (
+    <>
+      <Menu>
+        <MenuButton className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 focus:ring-0 focus:outline-none">
+          <ArrowUpDown size={14} />
+          <div className="text-xs ">Sort</div>        
+        </MenuButton>
+        {sortConfig.length === 0 ? (
+          <MenuItems 
+            anchor="bottom"
+            className="[--anchor-gap:3px] z-60 w-80 rounded-md border border-gray-200 shadow-lg bg-white px-4 py-1 focus:outline-none"
+          >
+            <div className="flex flex-row items-center gap-1">
+              <span className="text-gray-500 text-sm font-semibold py-2">Sort by</span>
+              <CircleQuestionMark className="text-gray-500" size={12} />  
+            </div>
+            <div className="w-full border-b border-gray-300"></div>
+            <div className="py-2 flex flex-col items-start">
+              {columns?.map((col) => (
+                <button 
+                  className="px-2 py-1 w-full text-start text-sm text-black rounded hover:bg-gray-100"
+                  onClick={(e) => {addSort(col.id, col.type)}}
+                >
+                  {col.name}
+                </button>
+              ))}
+            </div>
+          </MenuItems>
+        ) : (
+          <MenuItems 
+            anchor="bottom"
+            className="[--anchor-gap:3px] z-60 w-110 rounded-md border border-gray-200 shadow-lg bg-white px-4 py-2 focus:outline-none"
+          >
+            <div className="flex flex-row items-center gap-1">
+              <span className="text-gray-500 text-sm font-semibold py-2">Sort by</span>
+              <CircleQuestionMark className="text-gray-500" size={12} />  
+            </div>
+            <div className="w-full border-b border-gray-300"></div>
+            <div className="py-2 flex flex-col items-center">
+              {sortConfig.map((sort, index) => {
+                const column = columns?.find(col => col.id === sort.columnId);
+                const types = column?.type === "TEXT" ? sortTypesText : sortTypesNumber;
+
+                return (
+                  <div className="pt-2 flex flex-row gap-2">
+
+                    <select
+                      value={sort.columnId}
+                      onChange={(e) => updateSort(index, "columnId", e.target.value)}
+                      className="text-xs border border-gray-200 rounded pl-2 pr-40 py-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none"
+                    >
+                      <option value="">Select column</option>
+                      {columns?.map((col) => (
+                        <option key={col.id} value={col.id}>{col.name}</option>
+                      ))}
+                    </select>
+
+
+                    <select
+                      value={sort.type}
+                      onChange={(e) => updateSort(index, "type", e.target.value)}
+                      className="text-xs border border-gray-200 rounded text-start pl-2 pr-18 py-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none"
+                    >
+                      {Object.keys(types).map((key) => (
+                          <option key={key} value={key}>{types[key]}</option>
+                      ))}
+                    </select>
+
+                    <button
+                      className="p-2 flex-1 text-gray-400 rounded hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none"
+                      onClick={() => removeSort(index)}
+                    >
+                      <X size={18} strokeWidth={1}/>
+                    </button>
+
+                  </div>
+                )
+              })}
+            </div>
+            <button
+              onClick={addSortNoColumnId}
+              className="px-2 pb-2 text-xs text-gray-500 hover:text-black mt-2"
+            >
+              + Add another sort
+          </button>
+          </MenuItems>   
+        )}
+        </Menu>
+
+    </>
   )
 }
 
@@ -228,10 +378,11 @@ export function TableToolBar({
           <SquareLibrary size={14} />
           <div className="text-xs ">Group</div>
         </button>
-        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100">
-          <ArrowUpDown size={14} />
-          <div className="text-xs ">Sort</div>
-        </button>
+        <SortMenu
+          tableId={tableId}
+          sortConfig={sortConfig}
+          setSortConfig={setSortConfig}
+        />
         <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100">
           <PaintBucket size={14} />
           <div className="text-xs ">Color</div>

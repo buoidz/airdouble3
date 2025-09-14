@@ -449,96 +449,113 @@ export const tableRouter = createTRPCRouter({
         });
       }   
 
-      const whereConditions: Prisma.RowWhereInput[] = [
-        { tableId: input.tableId }
-      ];
+      // filtering
+      const filterFragments: string[] = [];
+      const filterParams: any[] = [input.tableId]; // $1 = tableId
+      let paramIndex = 2;
 
-      for (const filter of input.filters) {
-        const cellCondition: Prisma.CellWhereInput = {columnId: filter.columnId};
-
+      input.filters.forEach((filter) => {
+        let condition = "";
         switch (filter.type) {
           case "numEqualTo":
-            cellCondition.numberValue = { equals: Number(filter.value) }
+            condition = `"numberValue" = $${paramIndex++}`;
+            filterParams.push(Number(filter.value));
             break;
           case "numGreaterThan":
-            cellCondition.numberValue = { gt: Number(filter.value) }
+            condition = `"numberValue" > $${paramIndex++}`;
+            filterParams.push(Number(filter.value));
             break;
           case "numSmallerThan":
-            cellCondition.numberValue = { lt: Number(filter.value) }
+            condition = `"numberValue" < $${paramIndex++}`;
+            filterParams.push(Number(filter.value));
             break;
           case "textContains":
-            cellCondition.textValue = { contains: filter.value }
+            condition = `"textValue" ILIKE $${paramIndex++}`;
+            filterParams.push(`%${filter.value}%`);
             break;
           case "textEqualTo":
-            cellCondition.textValue = { equals: filter.value }
-            break;
-          case "textNotContains":
-            cellCondition.textValue = { not: {contains: filter.value }}
+            condition = `"textValue" = $${paramIndex++}`;
+            filterParams.push(filter.value);
             break;
           case "textIsEmpty":
-            cellCondition.textValue = { equals: "" }
+            condition = `("textValue" = '' OR "textValue" IS NULL)`;
+            break;
+          case "textNotContains":
+            condition = `"textValue" NOT ILIKE $${paramIndex++}`;
+            filterParams.push(`%${filter.value}%`);
             break;
           case "textNotEmpty":
-            cellCondition.textValue = { not: "" }
+            condition = `("textValue" <> '' AND "textValue" IS NOT NULL)`;
             break;
         }
 
-        whereConditions.push({
-          cells: { some: cellCondition }
-        });
+        filterFragments.push(`
+          EXISTS (
+            SELECT 1 FROM "Cell" f
+            WHERE f."rowId" = r.id
+              AND f."columnId" = $${paramIndex++}
+              AND ${condition}
+          )
+        `);
 
-      }
-
-      const whereClause: Prisma.RowWhereInput = 
-        whereConditions.length > 1 
-        ? { [input.filterCondition]: whereConditions } 
-        : whereConditions[0] ?? { tableId: input.tableId };        
-        
-      const rows = await ctx.db.row.findMany({
-        where: whereClause,
-        include: {
-          cells: {
-            include: {
-              column: true
-            }
-          }
-        }
+        filterParams.push(filter.columnId);
       });
 
+      const filterClause = filterFragments.length > 0
+        ? `AND (${filterFragments.join(` ${input.filterCondition} `)})`
+        : "";
+      
+      // sorting
+      const joinClauses: string[] = [];
+      const orderByClauses: string[] = [];
+      const groupByClauses: string[] = ['r.id']
 
-      if (input.sorts) {
-        rows.sort((a, b) => {
-          for (const sort of input.sorts) {
+      input.sorts.forEach((sort, i) => {
+        const alias = `s${i}`;
+        const colField = sort.type.startsWith("text") ? "textValue" : "numberValue";
+        const direction = sort.type.endsWith("ASC") ? "ASC" : "DESC";
 
-            const column = table.columns.find(c => c.id === sort.columnId);
-            if (!column) continue;
+        joinClauses.push(`
+          LEFT JOIN "Cell" ${alias} ON ${alias}."rowId" = r.id AND ${alias}."columnId" = $${paramIndex++}
+        `);
 
-            const aCell = a.cells.find(c => c.columnId === sort.columnId);
-            const bCell = b.cells.find(c => c.columnId === sort.columnId);
-          
-            let comparison = 0;
-            if (sort.type === "textASC") {
-              comparison = String(aCell?.textValue).toLowerCase().localeCompare(String(bCell?.textValue).toLowerCase())
-            } else if (sort.type === "textDESC") {
-              comparison = - String(aCell?.textValue).toLowerCase().localeCompare(String(bCell?.textValue).toLowerCase())
-            } else if (sort.type === "numASC") {
-              comparison = Number(aCell?.numberValue) - Number(bCell?.numberValue)
-            } else if (sort.type === "numDESC") {
-              comparison = Number(bCell?.numberValue) - Number(aCell?.numberValue)
-            }
+        filterParams.push(sort.columnId);
+        orderByClauses.push(`${alias}."${colField}" ${direction} NULLS LAST`);
 
-            if (comparison !== 0) {
-              return comparison;
-            }
-          }
+        groupByClauses.push(`${alias}."${colField}"`);
+      });
 
-          return 0;
-        })
-      }
+      const orderBySQL = orderByClauses.length > 0 ? `ORDER BY ${orderByClauses.join(", ")}` : "";
+      const groupBySQL = `GROUP BY ${groupByClauses.join(", ")}`;
+
+
+      const sql = `
+        SELECT r.*,
+              COALESCE(
+                json_agg(
+                  json_build_object(
+                    'id', c.id,
+                    'columnId', c."columnId",
+                    'textValue', c."textValue",
+                    'numberValue', c."numberValue"
+                  )
+                ) FILTER (WHERE c.id IS NOT NULL), '[]'
+              ) AS cells
+        FROM "rows" r
+        LEFT JOIN "Cell" c ON c."rowId" = r.id
+        ${joinClauses.join("\n")}
+        WHERE r."tableId" = $1
+        ${filterClause}
+        ${groupBySQL}
+        ${orderBySQL}
+      `;
+
+
+      const rows = await ctx.db.$queryRawUnsafe<any[]>(sql, ...filterParams);
 
       const cleanRows = rows.map(row => ({
         ...row,
-        cells: row.cells.map (cell => ({
+        cells: row.cells.map ((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null }) => ({
           id: cell.id,
           columnId: cell.columnId,
           textValue: cell.textValue,
