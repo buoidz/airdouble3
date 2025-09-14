@@ -204,7 +204,7 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
     () => 
       rowData?.map((row) => {
         const rowObj: RowData = {};
-        row.cells.forEach((cell) => {
+        row.cells.forEach((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null }) => {
           if(cell.textValue !== null){
             rowObj[cell.columnId] = cell.textValue; 
           } else if (cell.numberValue !== null){

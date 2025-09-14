@@ -555,7 +555,7 @@ export const tableRouter = createTRPCRouter({
 
       const cleanRows = rows.map(row => ({
         ...row,
-        cells: row.cells.map ((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null }) => ({
+        cells: row.cells.map((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null }) => ({
           id: cell.id,
           columnId: cell.columnId,
           textValue: cell.textValue,
