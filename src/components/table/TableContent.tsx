@@ -381,9 +381,9 @@ export function TableContent({
                   const isHighlightedSearch = isColumnHighlightedSearch(header.column.id);
 
                   const getBgColor = () => {
+                    if (isHighlightedSearch) return 'bg-yellow-200';
                     if (isHighlightedSort) return 'bg-red-50';
                     if (isHighlightedFilter) return 'bg-green-50';
-                    if (isHighlightedSearch) return 'bg-yellow-200';
                     return '';
                   };
 
@@ -434,9 +434,9 @@ export function TableContent({
                     const isHighlightedSearch = cellData.containSearchTerm;
 
                     const getBgColor = () => {
+                      if (isHighlightedSearch) return 'bg-yellow-100';
                       if (isHighlightedSort) return 'bg-red-50';
                       if (isHighlightedFilter) return 'bg-green-50';
-                      if (isHighlightedSearch) return 'bg-yellow-100';
                       return '';
                     };
                     return (

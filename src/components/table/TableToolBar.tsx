@@ -3,7 +3,7 @@ import type { FilterConfig, FilterType, SortConfig, SortType } from "./TableMain
 import { api } from "~/utils/api";
 import { Menu, MenuButton, MenuItems } from '@headlessui/react'
 import { ColumnType } from "@prisma/client";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
 
 type ColumnObj = {
@@ -51,11 +51,26 @@ function HideFieldsMenu({
     setColumnVisibility(visibility);
   }
 
+  const numHiddenColumn = useMemo(
+    () => columns.filter(col => !columnVisibility[col.id]).length,
+    [columnVisibility]
+  )
+
   return (
     <Menu>
-      <MenuButton className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100">
+      <MenuButton className={`p-2 rounded-sm flex flex-row border-2 border-white items-center gap-2 focus:ring-0 focus:outline-none ${
+        numHiddenColumn === 0 ? "hover:bg-gray-100" : "bg-blue-100 hover:border-gray-300"
+      }`}
+      >
+        
         <EyeOff size={14} />
-        <div className="text-xs ">Hide fields</div>
+        {numHiddenColumn === 0 ? (
+          <div className="text-xs ">Hide fields</div>
+        ): (
+          <div className="text-xs">{numHiddenColumn} hidden {numHiddenColumn === 1 ? "field" : "fields"}{" "}</div>
+        )}
+        
+        
       </MenuButton>
 
       <MenuItems 
@@ -71,7 +86,7 @@ function HideFieldsMenu({
           {columns.slice(1).map((col) => (
             <button 
               key={col.id} 
-              className="px-2 text-start text-sm rounded-sm flex flex-row items-center gap-6 hover:bg-gray-100"
+              className="px-2 text-start text-sm rounded-sm flex flex-row items-center gap-6 hover:bg-gray-100 focus:ring-0 focus:outline-none"
               onClick={() => toggleColumnVisibility(col.id)}
             >
               <div 
@@ -92,13 +107,13 @@ function HideFieldsMenu({
         </div>
         <div className="flex flex-row gap-2 items-center justify-center">
           <button 
-            className="w-full py-1 rounded-sm bg-gray-100 text-xs text-gray-500 hover:bg-gray-200 hover:text-black "
+            className="w-full py-1 rounded-sm bg-gray-100 text-xs text-gray-500 hover:bg-gray-200 hover:text-black focus:ring-0 focus:outline-none"
             onClick={toggleHideAll}
           >
             Hide all
           </button>
           <button 
-            className="w-full py-1 rounded-sm bg-gray-100 text-xs text-gray-500 hover:bg-gray-200 hover:text-black "
+            className="w-full py-1 rounded-sm bg-gray-100 text-xs text-gray-500 hover:bg-gray-200 hover:text-black focus:ring-0 focus:outline-none"
             onClick={toggleShowAll}
           >
             Show all
