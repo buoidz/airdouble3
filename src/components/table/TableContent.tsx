@@ -260,7 +260,7 @@ export function TableContent({
 
   const rows = useMemo(
     () => {
-      let fieldsWithSearchTerm = new Set<string>();
+      const fieldsWithSearchTerm = new Set<string>();
       let cellsWithSearchTerm = 0;
 
       const mappedRows = rowData?.map((row: RowDataRaw) => {
@@ -286,7 +286,7 @@ export function TableContent({
       setNumCellsContainSearchTerm?.(cellsWithSearchTerm);
 
       return mappedRows;
-    }, [rowData]
+    }, [rowData, setNumCellsContainSearchTerm, setNumCellsContainSearchTerm]
   );
 
   // All columns visible by default
@@ -298,7 +298,7 @@ export function TableContent({
       });
       setColumnVisibility(initialVisibility);
     }
-  }, [columns]);
+  }, [columns, colData, setColumnVisibility]);
 
     
   const table = useReactTable({

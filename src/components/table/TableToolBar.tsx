@@ -5,7 +5,6 @@ import { Menu, MenuButton, MenuItems } from '@headlessui/react'
 import { ColumnType } from "@prisma/client";
 import { useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
-import { LoadingSpinner } from "../LoadingPage";
 
 type ColumnObj = {
   tableId: string;
