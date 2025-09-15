@@ -1,6 +1,6 @@
 import { api } from "~/utils/api";
 import { LoadingPage, LoadingSpinner } from "../LoadingPage";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { flexRender, getCoreRowModel, useReactTable, type CellContext } from "@tanstack/react-table";
 import { Baseline, Hash, Plus } from "lucide-react";
 import { ColumnType } from "@prisma/client";
@@ -11,8 +11,9 @@ import type { RowDataRaw } from "~/server/api/routers/table";
 
 type RowData = Record<string, string | number>;
 
-function EditableCell({ initialValue, tableId, columnId, rowIndex }: { initialValue: string; tableId: string; columnId: string; rowIndex: number }) {
+function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType }: { initialValue: string; tableId: string; columnId: string; rowIndex: number; columnType: ColumnType }) {
   const [value , setValue] = useState(initialValue);
+  const [error, setError] = useState<string | null>(null);
 
   const updateCellMutation = api.table.updateCell.useMutation();
 
@@ -23,17 +24,40 @@ function EditableCell({ initialValue, tableId, columnId, rowIndex }: { initialVa
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setValue(e.target.value);
+    const newValue = e.target.value;
+    if (columnType === ColumnType.NUMBER) {
+      if (newValue === "" || !isNaN(Number(newValue))) {
+        setError(null);
+        setValue(newValue);
+      } else {
+        setError("Please enter a valid number");
+      }
+    } else {
+      setValue(newValue);
+    }
   }
+
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 3000); // 3 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
 
   return (
     <div className="relative">
+
       <input
         className="w-full border-none bg-transparent focus:outline-none"
         value={value}
         onChange={handleChange}
         onBlur={handleBlur}
       />
+      {error && (
+        <div className="p-1 border border-gray-300 bg-white rounded absolute bottom-full left-0 text-xs text-red-500 mt-1">
+          {error}
+        </div>
+      )}
     </div>
   );
 }
@@ -48,7 +72,7 @@ function AddColumnMenu({tableId}: {tableId: string}) {
   const addColumnMutation = api.table.addColumns.useMutation({
     onSuccess: () => {
       void utils.table.getColumnDataByTableId.invalidate();
-      void utils.table.getRowDataByTableId.invalidate();
+      void utils.table.getRowDataByOperations.invalidate();
       setNewColumnName("");
       setNewColumnType(null)
     },
@@ -196,6 +220,7 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
               tableId={tableId}
               rowIndex={props.row.index}
               columnId={col.id}
+              columnType={col.type}
             />;
           },      
       })) ?? [], 
@@ -232,7 +257,7 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
 
   const addRowMutation = api.table.addRow.useMutation({
     onSuccess: () => {
-      void utils.table.getRowDataByTableId.invalidate();
+      void utils.table.getRowDataByOperations.invalidate();
     },
     onError: (e) => {
       const errorMessage = e.data?.zodError?.fieldErrors.name;
