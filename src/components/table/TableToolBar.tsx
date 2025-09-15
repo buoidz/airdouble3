@@ -4,9 +4,115 @@ import { api } from "~/utils/api";
 import { Menu, MenuButton, MenuItems } from '@headlessui/react'
 import { ColumnType } from "@prisma/client";
 import { useState } from "react";
+import type { VisibilityState } from "@tanstack/react-table";
+import { LoadingSpinner } from "../LoadingPage";
+
+type ColumnObj = {
+  tableId: string;
+  name: string;
+  id: string;
+  createdAt: Date;
+  updatedAt: Date;
+  type: ColumnType;
+  order: number;
+};
+
+type HideFieldsMenuProps = {
+  columns: ColumnObj[],
+  columnVisibility: VisibilityState,
+  setColumnVisibility: React.Dispatch<React.SetStateAction<VisibilityState>>;
+};
+
+function HideFieldsMenu({
+  columns,
+  columnVisibility,
+  setColumnVisibility
+}: HideFieldsMenuProps) {
+
+  const toggleColumnVisibility = (columnId: string) => {
+    setColumnVisibility((prev) => ({
+      ...prev,
+      [columnId]: !prev[columnId],
+    }));
+  };
+
+  const toggleShowAll = () => {
+    const visibility: VisibilityState = {};
+    columns.forEach((col) => {
+      visibility[col.id] = true;
+    })
+    setColumnVisibility(visibility);
+  }
+
+  const toggleHideAll = () => {
+    const visibility: VisibilityState = {};
+    columns.forEach((col, index) => {
+      visibility[col.id] = index === 0;
+    })
+    setColumnVisibility(visibility);
+  }
+
+  return (
+    <Menu>
+      <MenuButton className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100">
+        <EyeOff size={14} />
+        <div className="text-xs ">Hide fields</div>
+      </MenuButton>
+
+      <MenuItems 
+        anchor="bottom"
+        className="[--anchor-gap:3px] z-60 w-75 rounded-md border border-gray-200 shadow-lg bg-white py-2 px-4 focus:outline-none"
+      >            
+        <div className="flex flex-row items-center justify-between gap-1">
+          <span className="text-gray-500 text-xs py-2">Find a fields</span>
+          <CircleQuestionMark className="text-gray-500" size={12} />  
+        </div>
+        <div className="w-full border-b-2 border-gray-300"></div>
+        <div className="py-3 flex flex-col gap-1">
+          {columns.slice(1).map((col) => (
+            <button 
+              key={col.id} 
+              className="px-2 text-start text-sm rounded-sm flex flex-row items-center gap-6 hover:bg-gray-100"
+              onClick={() => toggleColumnVisibility(col.id)}
+            >
+              <div 
+                className={`w-3.5 h-2 px-0.5 flex items-center rounded-xl ${
+                    columnVisibility[col.id] ? "bg-green-500 " : "bg-gray-300"
+                }`}
+              >
+                <div
+                  className={`bg-white w-1.5 h-1.5 rounded-full shadow-md transform duration-100 ${
+                    columnVisibility[col.id] ? "translate-x-1.5" : ""
+                  }`}
+                />
+              </div>
+              {col.name}
+
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-row gap-2 items-center justify-center">
+          <button 
+            className="w-full py-1 rounded-sm bg-gray-100 text-xs text-gray-500 hover:bg-gray-200 hover:text-black "
+            onClick={toggleHideAll}
+          >
+            Hide all
+          </button>
+          <button 
+            className="w-full py-1 rounded-sm bg-gray-100 text-xs text-gray-500 hover:bg-gray-200 hover:text-black "
+            onClick={toggleShowAll}
+          >
+            Show all
+          </button>
+        </div>
+      </MenuItems>   
+    </Menu>
+  )
+};
+
 
 type FilterMenuProps = {
-  tableId: string;
+  columns: ColumnObj[];
   filterConfig: FilterConfig[];
   setFilterConfig: React.Dispatch<React.SetStateAction<FilterConfig[]>>;
   filterCondition: "AND" | "OR";
@@ -31,17 +137,13 @@ const filterConditionAll: Record<"AND" | "OR", string> = {
 };
 
 function FilterMenu({
-  tableId,
+  columns,
   filterConfig,
   setFilterConfig,
   filterCondition,
   setFilterCondition,
 }: FilterMenuProps) {
   const utils = api.useUtils();
-
-  const {data: columns} = api.table.getColumnDataByTableId.useQuery({id: tableId});
-
-
   const addFilter = () => {
     const availableColumn = columns?.find((col) => !filterConfig.some((f) => f.columnId === col.id));
     if (availableColumn) {
@@ -192,18 +294,17 @@ const sortTypesNumber: Record<string, string> = {
 };
 
 type SortMenuProps = {
-  tableId: string;
+  columns: ColumnObj[];
   sortConfig: SortConfig[];
   setSortConfig: React.Dispatch<React.SetStateAction<SortConfig[]>>;
 };
 
 function SortMenu({
-  tableId,
+  columns,
   sortConfig,
   setSortConfig,
 }: SortMenuProps) {  
   const utils = api.useUtils();
-  const {data: columns} = api.table.getColumnDataByTableId.useQuery({id: tableId});
 
   const addSort = (columnId: string, colType: ColumnType) => {
     setSortConfig([...sortConfig, {
@@ -437,6 +538,8 @@ type TableToolBarProps = {
   setSearchTerm: React.Dispatch<React.SetStateAction<string>>
   numFieldsContainSearchTerm: number;
   numCellsContainSearchTerm: number;
+  columnVisibility: VisibilityState,
+  setColumnVisibility: React.Dispatch<React.SetStateAction<VisibilityState>>;
 };
 
 export function TableToolBar({
@@ -450,8 +553,13 @@ export function TableToolBar({
   searchTerm,
   setSearchTerm,
   numFieldsContainSearchTerm,
-  numCellsContainSearchTerm
+  numCellsContainSearchTerm,
+  columnVisibility,
+  setColumnVisibility,
 }: TableToolBarProps) {
+  const {data: columns} = api.table.getColumnDataByTableId.useQuery({id: tableId});
+
+  if (!columns) return <div className="h-12 border-b border-gray-300"/>;
 
   return (
     <div className="h-12 flex flex-row justify-between items-center border-b border-gray-300 bg-white  sticky top-22 z-50">
@@ -468,12 +576,13 @@ export function TableToolBar({
       </div>
 
       <div className="p-2 flex flex-row items-center text-gray-500 gap-3">
-        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100">
-          <EyeOff size={14} />
-          <div className="text-xs ">Hide fields</div>
-        </button>
+        <HideFieldsMenu
+          columns={columns}
+          columnVisibility={columnVisibility}
+          setColumnVisibility={setColumnVisibility}
+        />
         <FilterMenu 
-          tableId={tableId}
+          columns={columns}
           filterConfig={filterConfig}
           setFilterConfig={setFilterConfig}
           filterCondition={filterCondition}
@@ -484,7 +593,7 @@ export function TableToolBar({
           <div className="text-xs ">Group</div>
         </button>
         <SortMenu
-          tableId={tableId}
+          columns={columns}
           sortConfig={sortConfig}
           setSortConfig={setSortConfig}
         />

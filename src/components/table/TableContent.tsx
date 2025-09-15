@@ -1,7 +1,7 @@
 import { api } from "~/utils/api";
 import { LoadingPage, LoadingSpinner } from "../LoadingPage";
 import { useEffect, useMemo, useState } from "react";
-import { flexRender, getCoreRowModel, useReactTable, type CellContext } from "@tanstack/react-table";
+import { flexRender, getCoreRowModel, useReactTable, type CellContext, type VisibilityState } from "@tanstack/react-table";
 import { Baseline, Hash, Plus } from "lucide-react";
 import { ColumnType } from "@prisma/client";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
@@ -110,7 +110,7 @@ function AddColumnMenu({tableId}: {tableId: string}) {
   return (
     <Menu>
       <MenuButton className="px-8 w-full h-full focus:ring-0 focus:outline-none">
-        {addColumnMutation.isPending ? (<LoadingSpinner size={12}/>):(<Plus size={12}/>)}
+        {addColumnMutation.isPending ? (<LoadingSpinner size={12}/>):(<Plus size={14}/>)}
         
       </MenuButton>
 
@@ -206,6 +206,8 @@ type TableContentProps = {
   searchTerm: string
   setNumFieldsContainSearchTerm: React.Dispatch<React.SetStateAction<number>>;
   setNumCellsContainSearchTerm: React.Dispatch<React.SetStateAction<number>>;
+  columnVisibility: VisibilityState,
+  setColumnVisibility: React.Dispatch<React.SetStateAction<VisibilityState>>;
 }
 
 
@@ -217,7 +219,9 @@ export function TableContent({
   sortConfig, 
   searchTerm,
   setNumFieldsContainSearchTerm, 
-  setNumCellsContainSearchTerm
+  setNumCellsContainSearchTerm,
+  columnVisibility,
+  setColumnVisibility,
 }: TableContentProps) {
   const utils = api.useUtils();
 
@@ -229,6 +233,7 @@ export function TableContent({
     sorts: sortConfig,
     search: searchTerm,
   });
+
 
   const columns = useMemo(
     () => 
@@ -277,13 +282,24 @@ export function TableContent({
         return rowObj;
       }) ?? [];
 
-      // update parent state
       setNumFieldsContainSearchTerm?.(fieldsWithSearchTerm.size);
       setNumCellsContainSearchTerm?.(cellsWithSearchTerm);
 
       return mappedRows;
     }, [rowData]
   );
+
+  // All columns visible by default
+  useEffect(() => {
+    if (colData && colData.length > 0) {
+      const initialVisibility: VisibilityState = {};
+      colData.forEach((col) => {
+        initialVisibility[col.id] = true;
+      });
+      setColumnVisibility(initialVisibility);
+    }
+  }, [columns]);
+
     
   const table = useReactTable({
     data: rows,
@@ -291,6 +307,10 @@ export function TableContent({
     getCoreRowModel: getCoreRowModel(),
     enableColumnResizing: true,
     columnResizeMode: "onChange",
+    state: {
+      columnVisibility,
+    },
+    onColumnVisibilityChange: setColumnVisibility,
   });
 
 
@@ -354,7 +374,7 @@ export function TableContent({
           <thead>
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}> 
-                <th className="w-25 border-b border-gray-300"></th>
+                <th className="w-25 border-b border-gray-300">{" "}</th>
                 {headerGroup.headers.map((header) => { 
                   const isHighlightedFilter = isColumnHighlightedFilter(header.column.id)
                   const isHighlightedSort = isColumnHighlightedSort(header.column.id);
@@ -386,7 +406,7 @@ export function TableContent({
                     </th>
                   )
                 })}
-                <th className="border-b border-r border-gray-300 hover:bg-gray-100">
+                <th className="border-b border-r py-1 border-gray-300 hover:bg-gray-100">
                   <AddColumnMenu tableId={tableId}/>
                 </th>
               </tr>
@@ -401,7 +421,7 @@ export function TableContent({
               return (
                 <tr key={row.id}>
                   <th 
-                    className={`text-xs font-normal text-gray-500 w-25 pr-6 border-b border-gray-300 ${
+                    className={`text-xs font-normal text-gray-500 w-25 pr-6 py-2 border-b border-gray-300 ${
                       isFirstCellHighlighted ? 'bg-yellow-100' : ''
                     }`}
                   >

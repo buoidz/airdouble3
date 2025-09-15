@@ -5,6 +5,7 @@ import { TableContent } from "./TableContent";
 import { api } from "~/utils/api";
 import { LoadingPage } from "../LoadingPage";
 import { useEffect, useState } from "react";
+import type { VisibilityState } from "@tanstack/react-table";
 
 export type SortType = "textASC" | "textDESC" | "numASC" | "numDESC";
 
@@ -32,6 +33,8 @@ export function TableMain({baseId}: {baseId: string}) {
   const [searchTerm, setSearchTerm] = useState("");
   const [numFieldsContainSearchTerm, setNumFieldsContainSearchTerm] = useState(0);
   const [numCellsContainSearchTerm, setNumCellsContainSearchTerm] = useState(0);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+
 
   const [debouncedFilters, setDebouncedFilters] = useState<FilterConfig[]>([]);
   useEffect(() => {
@@ -59,6 +62,8 @@ export function TableMain({baseId}: {baseId: string}) {
 
     return () => clearTimeout(handler);
   }, [searchTerm]);
+
+
 
 
   if(isLoading){
@@ -89,6 +94,8 @@ export function TableMain({baseId}: {baseId: string}) {
         setSearchTerm={setSearchTerm}
         numFieldsContainSearchTerm={numFieldsContainSearchTerm}
         numCellsContainSearchTerm={numCellsContainSearchTerm}
+        columnVisibility={columnVisibility}
+        setColumnVisibility={setColumnVisibility}
       /> 
       
       <div className="h-full flex flex-row pl-85"  style={{ height: `calc(100vh - 56px - 32px - 48px)` }}>
@@ -101,6 +108,8 @@ export function TableMain({baseId}: {baseId: string}) {
           searchTerm={debouncedSearchTerm}
           setNumFieldsContainSearchTerm={setNumFieldsContainSearchTerm}
           setNumCellsContainSearchTerm={setNumCellsContainSearchTerm}
+          columnVisibility={columnVisibility}
+          setColumnVisibility={setColumnVisibility}
         />
       </div>
     </div>
