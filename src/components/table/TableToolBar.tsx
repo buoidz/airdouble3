@@ -3,6 +3,7 @@ import type { FilterConfig, FilterType, SortConfig, SortType } from "./TableMain
 import { api } from "~/utils/api";
 import { Menu, MenuButton, MenuItems } from '@headlessui/react'
 import { ColumnType } from "@prisma/client";
+import { useState } from "react";
 
 type FilterMenuProps = {
   tableId: string;
@@ -196,7 +197,7 @@ type SortMenuProps = {
   setSortConfig: React.Dispatch<React.SetStateAction<SortConfig[]>>;
 };
 
-export function SortMenu({
+function SortMenu({
   tableId,
   sortConfig,
   setSortConfig,
@@ -352,6 +353,78 @@ export function SortMenu({
   )
 }
 
+type SearchMenuProps = {
+  searchTerm: string;
+  setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
+  numFields: number;
+  numCells: number
+};
+
+function SearchMenu({
+  searchTerm,
+  setSearchTerm,
+  numFields,
+  numCells,
+} : SearchMenuProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleClose = () => {
+    setSearchTerm("");
+    setIsOpen(false);
+  }
+
+  const displayText = () => {
+    return (
+      <>
+        Found {" "}
+        <span className="font-bold">{numFields}</span>{" "}
+        {numFields === 1 ? "field" : "fields"}{" "}
+        and {" "}
+        <span className="font-bold">{numCells}</span>{" "}
+        {numCells === 1 ? "cell" : "cells"}{" "}
+        (within {" "}
+        <span className="font-bold">{numCells}</span>{" "}
+        {numCells === 1 ? "record" : "records"})
+      </>
+    );
+  };
+
+  return (
+    <div className="relative">
+      <button 
+        className="p-2 rounded-sm focus:ring-0 focus:outline-none hover:bg-gray-100"
+         onClick={() => setIsOpen(true)}
+      >
+        <Search size={16} />
+      </button>
+      {isOpen && (
+        <div className="absolute top-full right-0 rounded-sm border-2 border-gray-300 bg-white inline-block">
+          <div className="flex flex-row gap-2 justify-between items-center m-1 mr-2">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Find in view"
+              className="w-full px-1 text-xs font-semibold text-gray-700 py-1 focus:outline-none focus:ring-0"
+            />
+            <button
+              onClick={handleClose}
+              className="text-gray-500 hover:text-gray-800"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div className="px-2 pt-0.5 pb-1 bg-gray-100 whitespace-nowrap">
+            <span className="text-[0.65rem] text-gray-700 ">{displayText()}</span>
+          </div>
+        </div>
+      )}
+      
+    </div>
+    
+  );
+}
+
 type TableToolBarProps = {
   tableId: string;
   filterConfig: FilterConfig[];
@@ -360,6 +433,10 @@ type TableToolBarProps = {
   setFilterCondition: React.Dispatch<React.SetStateAction<"AND" | "OR">>;
   sortConfig: SortConfig[];
   setSortConfig: React.Dispatch<React.SetStateAction<SortConfig[]>>;
+  searchTerm: string;
+  setSearchTerm: React.Dispatch<React.SetStateAction<string>>
+  numFieldsContainSearchTerm: number;
+  numCellsContainSearchTerm: number;
 };
 
 export function TableToolBar({
@@ -370,6 +447,10 @@ export function TableToolBar({
   setFilterCondition,
   sortConfig,
   setSortConfig,
+  searchTerm,
+  setSearchTerm,
+  numFieldsContainSearchTerm,
+  numCellsContainSearchTerm
 }: TableToolBarProps) {
 
   return (
@@ -418,9 +499,12 @@ export function TableToolBar({
           <ExternalLink size={14} />
           <div className="text-xs ">Share and sync</div>
         </button>
-        <button className="p-2 rounded-sm hover:bg-gray-100">
-          <Search size={16} />
-        </button>
+        <SearchMenu 
+          searchTerm={searchTerm}
+          setSearchTerm={setSearchTerm}
+          numFields={numFieldsContainSearchTerm}
+          numCells={numCellsContainSearchTerm}
+        />
       </div>
 
     </div>

@@ -21,6 +21,7 @@ export type CellData = {
   columnId: string;
   textValue: string | null;
   numberValue: number | null;
+  containSearchTerm: true | false;
 };
 
 export type RowDataRaw = {
@@ -543,6 +544,14 @@ export const tableRouter = createTRPCRouter({
       const groupBySQL = `GROUP BY ${groupByClauses.join(", ")}`;
 
 
+      // searching
+      let searchParam: string | undefined;
+      if (input.search) {
+        searchParam = `%${input.search}%`;
+        filterParams.push(searchParam);
+      }
+
+
       const sql = `
         SELECT r.*,
               COALESCE(
@@ -551,7 +560,17 @@ export const tableRouter = createTRPCRouter({
                     'id', c.id,
                     'columnId', c."columnId",
                     'textValue', c."textValue",
-                    'numberValue', c."numberValue"
+                    'numberValue', c."numberValue",
+                    'containSearchTerm',
+                      CASE
+                        WHEN $${filterParams.length} IS NOT NULL
+                        AND (
+                              c."textValue" ILIKE $${filterParams.length}
+                              OR CAST(c."numberValue" AS TEXT) ILIKE $${filterParams.length}
+                            )
+                        THEN true
+                        ELSE false
+                      END
                   )
                 ) FILTER (WHERE c.id IS NOT NULL), '[]'
               ) AS cells
@@ -569,11 +588,12 @@ export const tableRouter = createTRPCRouter({
 
       const cleanRows: RowDataRaw[] = rows.map(row => ({
         ...row,
-        cells: row.cells.map((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null }) => ({
+        cells: row.cells.map((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null; containSearchTerm: true | false}) => ({
           id: cell.id,
           columnId: cell.columnId,
           textValue: cell.textValue,
           numberValue: cell.numberValue,
+          containSearchTerm: cell.containSearchTerm,
         }))
       }))
 

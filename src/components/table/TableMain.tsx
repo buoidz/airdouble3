@@ -29,6 +29,9 @@ export function TableMain({baseId}: {baseId: string}) {
   const [filterConfig, setFilterConfig] = useState<FilterConfig[]>([]);
   const [filterCondition, setFilterCondition] = useState<"AND"|"OR">("AND");
   const [sortConfig, setSortConfig] = useState<SortConfig[]>([])
+  const [searchTerm, setSearchTerm] = useState("");
+  const [numFieldsContainSearchTerm, setNumFieldsContainSearchTerm] = useState(0);
+  const [numCellsContainSearchTerm, setNumCellsContainSearchTerm] = useState(0);
 
   const [debouncedFilters, setDebouncedFilters] = useState<FilterConfig[]>([]);
   useEffect(() => {
@@ -47,6 +50,15 @@ export function TableMain({baseId}: {baseId: string}) {
 
     return () => clearTimeout(handler);
   }, [sortConfig]);
+
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
 
 
   if(isLoading){
@@ -67,17 +79,29 @@ export function TableMain({baseId}: {baseId: string}) {
       <TableListBar tables={tableProps} baseId={baseId} selectedTableId={selectedTableId} setSelectedTableId={setSelectedTableId}/>
       <TableToolBar 
         tableId={selectedTableId}
-        filterConfig={debouncedFilters}
-        setFilterConfig={setDebouncedFilters}
+        filterConfig={filterConfig}
+        setFilterConfig={setFilterConfig}
         filterCondition={filterCondition}
         setFilterCondition={setFilterCondition}
-        sortConfig={debouncedSorts}
-        setSortConfig={setDebouncedSorts}
+        sortConfig={sortConfig}
+        setSortConfig={setSortConfig}
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        numFieldsContainSearchTerm={numFieldsContainSearchTerm}
+        numCellsContainSearchTerm={numCellsContainSearchTerm}
       /> 
       
       <div className="h-full flex flex-row pl-85"  style={{ height: `calc(100vh - 56px - 32px - 48px)` }}>
         <TableViewSideBar />
-        <TableContent tableId={selectedTableId} filterConfig={debouncedFilters} filterCondition={filterCondition} sortConfig={debouncedSorts} />
+        <TableContent 
+          tableId={selectedTableId} 
+          filterConfig={debouncedFilters} 
+          filterCondition={filterCondition} 
+          sortConfig={debouncedSorts} 
+          searchTerm={debouncedSearchTerm}
+          setNumFieldsContainSearchTerm={setNumFieldsContainSearchTerm}
+          setNumCellsContainSearchTerm={setNumCellsContainSearchTerm}
+        />
       </div>
     </div>
   );

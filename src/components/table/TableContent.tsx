@@ -9,9 +9,22 @@ import type { FilterConfig, SortConfig } from "./TableMain";
 import type { RowDataRaw } from "~/server/api/routers/table";
 
 
-type RowData = Record<string, string | number>;
+type CellValue = {
+  value: string;
+  containSearchTerm: boolean;
+};
 
-function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType }: { initialValue: string; tableId: string; columnId: string; rowIndex: number; columnType: ColumnType }) {
+type RowData = Record<string, CellValue>;
+
+type EditableCellProps = {
+  initialValue: string; 
+  tableId: string; 
+  columnId: string; 
+  rowIndex: number; 
+  columnType: ColumnType;
+}
+
+function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType }: EditableCellProps) {
   const [value , setValue] = useState(initialValue);
   const [error, setError] = useState<string | null>(null);
 
@@ -190,10 +203,22 @@ type TableContentProps = {
   filterConfig: FilterConfig[],
   filterCondition: "AND" | "OR",
   sortConfig: SortConfig[],
+  searchTerm: string
+  setNumFieldsContainSearchTerm: React.Dispatch<React.SetStateAction<number>>;
+  setNumCellsContainSearchTerm: React.Dispatch<React.SetStateAction<number>>;
 }
 
 
-export function TableContent({tableId, filterConfig, filterCondition, sortConfig}: TableContentProps) {
+
+export function TableContent({
+  tableId, 
+  filterConfig, 
+  filterCondition, 
+  sortConfig, 
+  searchTerm,
+  setNumFieldsContainSearchTerm, 
+  setNumCellsContainSearchTerm
+}: TableContentProps) {
   const utils = api.useUtils();
 
   const {data: colData, isLoading: colLoading} = api.table.getColumnDataByTableId.useQuery({id: tableId});
@@ -202,6 +227,7 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
     filters: filterConfig,
     filterCondition: filterCondition,
     sorts: sortConfig,
+    search: searchTerm,
   });
 
   const columns = useMemo(
@@ -214,9 +240,9 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
           minSize: 50,
           maxSize: 500,
           cell: (props: CellContext<RowData, unknown>) => {
-            const cellValue = props.getValue() as string;
+            const cellValue = props.getValue() as CellValue;
             return <EditableCell
-              initialValue={cellValue}
+              initialValue={cellValue.value}
               tableId={tableId}
               rowIndex={props.row.index}
               columnId={col.id}
@@ -228,22 +254,35 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
   );
 
   const rows = useMemo(
-    () => 
-      rowData?.map((row: RowDataRaw) => {
+    () => {
+      let fieldsWithSearchTerm = new Set<string>();
+      let cellsWithSearchTerm = 0;
+
+      const mappedRows = rowData?.map((row: RowDataRaw) => {
         const rowObj: RowData = {};
-        row.cells.forEach((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null }) => {
-          if(cell.textValue !== null){
-            rowObj[cell.columnId] = cell.textValue; 
-          } else if (cell.numberValue !== null){
-            rowObj[cell.columnId] = cell.numberValue;
-          } else {
-            rowObj[cell.columnId] = "";
-          } 
+        row.cells.forEach((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null; containSearchTerm: true | false}) => {
+          const value = cell.textValue ?? String(cell.numberValue ?? "");
+          
+          rowObj[cell.columnId] = {
+            value: value,
+            containSearchTerm: cell.containSearchTerm,
+          };
+
+          if (cell.containSearchTerm) {
+            fieldsWithSearchTerm.add(cell.columnId);
+            cellsWithSearchTerm += 1;
+          }
         });
 
         return rowObj;
-      }) ?? [],
-    [rowData]
+      }) ?? [];
+
+      // update parent state
+      setNumFieldsContainSearchTerm?.(fieldsWithSearchTerm.size);
+      setNumCellsContainSearchTerm?.(cellsWithSearchTerm);
+
+      return mappedRows;
+    }, [rowData]
   );
     
   const table = useReactTable({
@@ -291,6 +330,12 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
     return sortedColumnIds.has(columnId);
   };
 
+  const isColumnHighlightedSearch = (columnId: string) => {
+    return rowData?.some(row =>
+      row.cells.some(cell => cell.columnId === columnId && cell.containSearchTerm)
+    );
+  };
+
 
   
   if(colLoading || rowLoading){
@@ -313,10 +358,12 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
                 {headerGroup.headers.map((header) => { 
                   const isHighlightedFilter = isColumnHighlightedFilter(header.column.id)
                   const isHighlightedSort = isColumnHighlightedSort(header.column.id);
+                  const isHighlightedSearch = isColumnHighlightedSearch(header.column.id);
 
                   const getBgColor = () => {
                     if (isHighlightedSort) return 'bg-red-50';
                     if (isHighlightedFilter) return 'bg-green-50';
+                    if (isHighlightedSearch) return 'bg-yellow-200';
                     return '';
                   };
 
@@ -347,30 +394,43 @@ export function TableContent({tableId, filterConfig, filterCondition, sortConfig
           </thead>
 
           <tbody>
-            {table.getRowModel().rows.map((row, index) => (
-              <tr key={row.id}>
-                <th className="text-xs font-normal text-gray-500 w-25 pr-6 border-b border-gray-300">{index}</th>
-                {row.getVisibleCells().map(cell => {
-                  const isHighlightedFilter = isColumnHighlightedFilter(cell.column.id)
-                  const isHighlightedSort = isColumnHighlightedSort(cell.column.id);
+            {table.getRowModel().rows.map((row, index) => {
+              const firstCellData = row.getVisibleCells()[0]?.getValue() as CellValue;
+              const isFirstCellHighlighted = firstCellData?.containSearchTerm;
 
-                  const getBgColor = () => {
-                    if (isHighlightedSort) return 'bg-red-50';
-                    if (isHighlightedFilter) return 'bg-green-50';
-                    return '';
-                  };
-                  return (
-                    <td 
-                      key={cell.id} 
-                      className={`border-r border-b border-gray-300 px-4 py-2 text-sm text-gray-800 ${getBgColor()}`}
-                      style={{ width: cell.column.getSize() }}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  )
-                })}
-              </tr>
-            ))}
+              return (
+                <tr key={row.id}>
+                  <th 
+                    className={`text-xs font-normal text-gray-500 w-25 pr-6 border-b border-gray-300 ${
+                      isFirstCellHighlighted ? 'bg-yellow-100' : ''
+                    }`}
+                  >
+                    {index}
+                  </th>
+                  {row.getVisibleCells().map(cell => {
+                    const isHighlightedFilter = isColumnHighlightedFilter(cell.column.id)
+                    const isHighlightedSort = isColumnHighlightedSort(cell.column.id);
+                    const cellData = cell.getValue() as CellValue;
+                    const isHighlightedSearch = cellData.containSearchTerm;
+
+                    const getBgColor = () => {
+                      if (isHighlightedSort) return 'bg-red-50';
+                      if (isHighlightedFilter) return 'bg-green-50';
+                      if (isHighlightedSearch) return 'bg-yellow-100';
+                      return '';
+                    };
+                    return (
+                      <td 
+                        key={cell.id} 
+                        className={`border-r border-b border-gray-300 px-4 py-2 text-sm text-gray-800 ${getBgColor()}`}
+                        style={{ width: cell.column.getSize() }}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    )
+                  })}
+                </tr>
+            )})}
           </tbody>
           <tfoot>
             <tr>
