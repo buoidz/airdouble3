@@ -4,10 +4,9 @@ import { TableToolBar } from "./TableToolBar";
 import { TableContent } from "./TableContent";
 import { api } from "~/utils/api";
 import { LoadingPage } from "../LoadingPage";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
 import type { View } from "@prisma/client";
-import isEqual from "lodash/isEqual";
 
 export type SortType = "textASC" | "textDESC" | "numASC" | "numDESC";
 
@@ -46,7 +45,7 @@ export function TableMain({baseId}: {baseId: string}) {
   const saveViewMutation = api.view.saveView.useMutation({
     onSuccess: () => {
       setIsViewReady(true);
-      utils.view.getAllViewByTableId.invalidate();
+      void utils.view.getAllViewByTableId.invalidate();
     },
     onError: () => {
       setIsViewReady(true);
