@@ -8,7 +8,6 @@ export const viewRouter = createTRPCRouter({
     .input(z.object({
       id: z.string(),
       tableId: z.string(),
-      name: z.string(),
       filterConfig: z.array(filterSchema).default([]),
       filterCondition: z.enum(["AND", "OR"]).default("AND"),
       sortConfig: z.array(sortSchema).default([]),
@@ -44,7 +43,6 @@ export const viewRouter = createTRPCRouter({
         where: {id: input.id},
         data: {
           tableId: input.tableId,
-          name: input.name,
           filterConfig: input.filterConfig, 
           filterCondition: input.filterCondition,
           sortConfig: input.sortConfig,

@@ -4,7 +4,7 @@ import { TableToolBar } from "./TableToolBar";
 import { TableContent } from "./TableContent";
 import { api } from "~/utils/api";
 import { LoadingPage } from "../LoadingPage";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
 import type { View } from "@prisma/client";
 import isEqual from "lodash/isEqual";
@@ -32,14 +32,7 @@ export function TableMain({baseId}: {baseId: string}) {
 
   const {data: views, isLoading: viewsLoading} = api.view.getAllViewByTableId.useQuery({tableId: selectedTableId});
   const [selectedView, setSelectedView] = useState<View | null>(null);
-  const [isConfigInitialized, setIsConfigInitialized] = useState(false);
 
-
-  useEffect(() => {
-    if (views && views.length > 0 && views[0]) {
-      setSelectedView(views[0]);
-    }
-  }, [views]);
 
   const [filterConfig, setFilterConfig] = useState<FilterConfig[]>([]);
   const [filterCondition, setFilterCondition] = useState<"AND"|"OR">("AND");
@@ -49,101 +42,76 @@ export function TableMain({baseId}: {baseId: string}) {
   const [numCellsContainSearchTerm, setNumCellsContainSearchTerm] = useState(0);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
+  const [isViewReady, setIsViewReady] = useState(false);
+  const saveViewMutation = api.view.saveView.useMutation({
+    onSuccess: () => {
+      setIsViewReady(true);
+      utils.view.getAllViewByTableId.invalidate();
+    },
+    onError: () => {
+      setIsViewReady(true);
+    },
+  });
+
+  const applyViewToState = (view: View) => {
+    console.log("Applying view")
+    setIsViewReady(false);
+    setSelectedView(view);
+    setFilterConfig(Array.isArray(view.filterConfig) ? view.filterConfig as unknown as FilterConfig[] : []);
+    setFilterCondition(view.filterCondition === "OR" ? "OR" : "AND");
+    setSortConfig(Array.isArray(view.sortConfig) ? view.sortConfig as unknown as SortConfig[] : []);
+    setSearchTerm(view.searchTerm ?? "");
+    setColumnVisibility(
+      typeof view.columnVisibility === "object" && view.columnVisibility !== null
+        ? view.columnVisibility as VisibilityState
+        : {}
+    );
+
+    setTimeout(() => setIsViewReady(true), 1000);
+    console.log("Done applying view")
+  };
+
+
+  const handleSwitchView = (view: View) => {
+    applyViewToState(view);
+  };
+
+
+  const isDirty = useMemo(() => {
+    if (!selectedView) return false;
+    return (
+      JSON.stringify(filterConfig) !== JSON.stringify(selectedView.filterConfig ?? []) ||
+      filterCondition !== (selectedView.filterCondition ?? "AND") ||
+      JSON.stringify(sortConfig) !== JSON.stringify(selectedView.sortConfig ?? []) ||
+      searchTerm !== (selectedView.searchTerm ?? "") ||
+      JSON.stringify(columnVisibility) !== JSON.stringify(selectedView.columnVisibility ?? {})
+    );
+  }, [filterConfig, filterCondition, sortConfig, searchTerm, columnVisibility, selectedView]);
+
   useEffect(() => {
-    if (selectedView) {
-      setIsConfigInitialized(false);
-      try {
-        const savedFilterConfig: FilterConfig[] = Array.isArray(selectedView.filterConfig)
-          ? (selectedView.filterConfig as unknown as FilterConfig[])
-          : [];
+    if (!selectedView || !isDirty) return;
 
-        const savedSortConfig: SortConfig[] = Array.isArray(selectedView.sortConfig)
-          ? (selectedView.sortConfig as unknown as SortConfig[])
-          : [];
+    const timeout = setTimeout(() => {
+      saveViewMutation.mutate({
+        id: selectedView.id,
+        tableId: selectedView.tableId,
+        filterConfig,
+        filterCondition,
+        sortConfig,
+        searchTerm,
+        columnVisibility,
+      });
+    }, 1000); 
 
-        const savedColumnVisibility: Record<string, boolean> =
-          typeof selectedView.columnVisibility === "object" && selectedView.columnVisibility !== null
-            ? (selectedView.columnVisibility as unknown as Record<string, boolean>)
-            : {};
+    return () => clearTimeout(timeout);
+  }, [filterConfig, filterCondition, sortConfig, searchTerm, columnVisibility]);
 
-        setFilterConfig(savedFilterConfig);
-        setSortConfig(savedSortConfig);
-        setSearchTerm(selectedView.searchTerm ?? "");
-        setFilterCondition((selectedView.filterCondition as "AND" | "OR") ?? "AND");
-
-        setColumnVisibility(savedColumnVisibility);
-
-        console.log("---------------------")
-        console.log(savedColumnVisibility)
-        console.log("---------------------")
-        console.log(columnVisibility)
-        console.log("---------------------")
-
-
-        void utils.table.getRowDataByOperations.invalidate({
-          tableId: selectedView.tableId,
-          filters: savedFilterConfig,
-          sorts: savedSortConfig,
-          search: selectedView.searchTerm ?? "",
-          filterCondition: (selectedView.filterCondition as "AND" | "OR") ?? "AND",
-        });
-
-      } catch (error) {
-        console.error("Error parsing view configuration:", error);
-        // Reset to defaults if something unexpected occurs
-        setFilterConfig([]);
-        setSortConfig([]);
-        setSearchTerm("");
-        setFilterCondition("AND");
-        setColumnVisibility({});
-      } finally {
-        console.log("finish init states")
-        console.log(selectedView.columnVisibility)
-        console.log(columnVisibility)
-        setTimeout(() => {
-          setIsConfigInitialized(true);
-        }, 300);
-      }
+  useEffect(() => {
+    if (views && views.length > 0 && !selectedView && views[0]) {
+      applyViewToState(views[0]);
     }
-  }, [selectedView]);
+  }, [views]);
 
-  // useEffect(() => {
-  //   if (!selectedView) return;
-
-  //   const savedFilterConfig: FilterConfig[] = Array.isArray(selectedView.filterConfig)
-  //     ? (selectedView.filterConfig as unknown as FilterConfig[])
-  //     : [];
-
-  //   const savedSortConfig: SortConfig[] = Array.isArray(selectedView.sortConfig)
-  //     ? (selectedView.sortConfig as unknown as SortConfig[])
-  //     : [];
-
-  //   const savedColumnVisibility: Record<string, boolean> =
-  //     typeof selectedView.columnVisibility === "object" && selectedView.columnVisibility !== null
-  //       ? (selectedView.columnVisibility as unknown as Record<string, boolean>)
-  //       : {};
-
-  //   const configsMatch =
-  //     isEqual(filterConfig, savedFilterConfig) &&
-  //     isEqual(sortConfig, savedSortConfig) &&
-  //     searchTerm === (selectedView.searchTerm ?? "") &&
-  //     filterCondition === ((selectedView.filterCondition as "AND" | "OR") ?? "AND") &&
-  //     isEqual(columnVisibility, savedColumnVisibility);
-
-  //   if (configsMatch) {
-  //     console.log("SET CONFIG INIT TRUE")
-  //     setIsConfigInitialized(true);
-  //   } else {
-  //     setIsConfigInitialized(false);
-  //   }
-  // }, [
-  //   selectedView,
-  //   filterConfig,
-  //   sortConfig,
-  //   searchTerm,
-  //   filterCondition,
-  //   columnVisibility,
-  // ]);
 
   const [debouncedFilters, setDebouncedFilters] = useState<FilterConfig[]>([]);
   useEffect(() => {
@@ -172,86 +140,6 @@ export function TableMain({baseId}: {baseId: string}) {
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-
-  const savingViewRef = useRef<string | null>(null);
-
-  const saveViewMutation = api.view.saveView.useMutation();
-
-  const handleSaveView = () => {
-    if (!selectedView) return;
-
-    // Prevent saving if we're in the middle of switching views
-    if (savingViewRef.current && savingViewRef.current !== selectedView.id) {
-      console.log("block 1")
-      return;
-    }
-    
-    savingViewRef.current = selectedView.id;
-    console.log("saveView")
-    console.log({
-      id: selectedView.id,
-      tableId: selectedTableId,
-      name: selectedView.name ?? "Grid 1",
-      filterConfig,
-      filterCondition,
-      sortConfig,
-      searchTerm,
-      columnVisibility,
-    })
-
-    saveViewMutation.mutate({
-      id: selectedView.id,
-      tableId: selectedTableId,
-      name: selectedView.name ?? "Grid 1",
-      filterConfig,
-      filterCondition,
-      sortConfig,
-      searchTerm,
-      columnVisibility,
-    }, {
-      onSuccess: () => {
-        console.log("Save successful");
-        savingViewRef.current = null; // Clear the ref on success
-      },
-      onError: (error) => {
-        console.error("Save failed:", error);
-        savingViewRef.current = null; // Clear the ref on error too
-      }
-    });
-  };
-
-  useEffect(() => {
-    console.log("Save effect triggered:", { 
-      selectedViewId: selectedView?.id, 
-      isConfigInitialized,
-      sortConfigLength: sortConfig.length,
-      columnVisibilityKeys: Object.keys(columnVisibility).length
-    });
-    if (!selectedView || !isConfigInitialized) return;
-
-    const timeout = setTimeout(() => {
-      handleSaveView();
-    }, 500);
-
-    return () => clearTimeout(timeout);
-  }, [
-    selectedView?.id,
-    filterConfig,
-    filterCondition,
-    sortConfig,
-    searchTerm,
-    columnVisibility,
-    isConfigInitialized,
-  ]);
-
-
-  const handleSwitchView = (view: View) => {
-    if (view.id !== selectedView?.id) {
-      console.log("switch view")
-      setSelectedView(view);
-      // Remove duplicate config loading - let the useEffect handle it
-    }
-  };
 
 
 
@@ -291,7 +179,7 @@ export function TableMain({baseId}: {baseId: string}) {
       /> 
       
       <div className="h-full flex flex-row pl-70"  style={{ height: `calc(100vh - 56px - 32px - 48px)` }}>
-        <TableViewSideBar 
+        <TableViewSideBar   
           tableId={selectedTableId}
           views={views}
           selectedView={selectedView}
@@ -307,7 +195,7 @@ export function TableMain({baseId}: {baseId: string}) {
           setNumCellsContainSearchTerm={setNumCellsContainSearchTerm}
           columnVisibility={columnVisibility}
           setColumnVisibility={setColumnVisibility}
-          isConfigInitialized={isConfigInitialized}
+          isViewReady={isViewReady}
         />
       </div>
     </div>

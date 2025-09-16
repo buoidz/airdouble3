@@ -219,7 +219,7 @@ type TableContentProps = {
   setNumCellsContainSearchTerm: React.Dispatch<React.SetStateAction<number>>;
   columnVisibility: VisibilityState,
   setColumnVisibility: React.Dispatch<React.SetStateAction<VisibilityState>>;
-  isConfigInitialized: boolean
+  isViewReady: boolean
 }
 
 
@@ -234,7 +234,7 @@ export function TableContent({
   setNumCellsContainSearchTerm,
   columnVisibility,
   setColumnVisibility,
-  isConfigInitialized
+  isViewReady,
 }: TableContentProps) {
   const utils = api.useUtils();
 
@@ -248,7 +248,7 @@ export function TableContent({
       search: searchTerm,
     },
     {
-      enabled: isConfigInitialized,
+      enabled: isViewReady
     }
   );
 

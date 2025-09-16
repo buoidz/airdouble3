@@ -18,10 +18,13 @@ export function TableViewSideBar({
   handleSwitchView,
 }: TableViewSideBarProps) {
   const utils = api.useUtils();
-  const addViewMutation = api.view.createView.useMutation({});
+  const addViewMutation = api.view.createView.useMutation({
+    onSuccess: () => {
+      void utils.view.getAllViewByTableId.invalidate();
+    }
+  });
   const handleAddView = () => {
     addViewMutation.mutate({ tableId: tableId, name: "Grid 1"});
-    void utils.view.getAllViewByTableId.invalidate();
   }
 
 
@@ -64,14 +67,6 @@ export function TableViewSideBar({
               <span className="text-sm font-semibold">{view.name}</span>
             </button>
           ))}
-          {/* <button className="px-2 py-1.5 flex flex-row items-center gap-2 text-start rounded-sm hover:bg-gray-100">
-            <Table2 className="text-blue-500" size={16} />
-            <span className="text-sm font-semibold">abcdasc</span>
-          </button>
-          <button className="px-2 py-1.5 flex flex-row items-center gap-2 text-start rounded-sm hover:bg-gray-100">
-            <Table2 className="text-blue-500" size={16} />
-            <span className="text-sm font-semibold">abcdasc</span>
-          </button> */}
         </div>
       </div>
     </div>
