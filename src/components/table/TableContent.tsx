@@ -3,7 +3,7 @@ import { LoadingPage, LoadingSpinner } from "../LoadingPage";
 import { useEffect, useMemo, useState } from "react";
 import { flexRender, getCoreRowModel, useReactTable, type CellContext, type VisibilityState } from "@tanstack/react-table";
 import { Baseline, Hash, Plus } from "lucide-react";
-import { ColumnType } from "@prisma/client";
+import { ColumnType, type View } from "@prisma/client";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import type { FilterConfig, SortConfig } from "./TableMain";
 import type { RowDataRaw } from "~/server/api/routers/table";
@@ -198,6 +198,17 @@ function AddColumnMenu({tableId}: {tableId: string}) {
   )
 }
 
+interface ViewConfig {
+  filterConfig: FilterConfig[];
+  filterCondition: "AND" | "OR";
+  sortConfig: SortConfig[];
+  searchTerm: string;
+  columnVisibility: VisibilityState;
+}
+
+
+
+
 type TableContentProps = {
   tableId: string,
   filterConfig: FilterConfig[],
@@ -208,6 +219,7 @@ type TableContentProps = {
   setNumCellsContainSearchTerm: React.Dispatch<React.SetStateAction<number>>;
   columnVisibility: VisibilityState,
   setColumnVisibility: React.Dispatch<React.SetStateAction<VisibilityState>>;
+  isConfigInitialized: boolean
 }
 
 
@@ -222,17 +234,23 @@ export function TableContent({
   setNumCellsContainSearchTerm,
   columnVisibility,
   setColumnVisibility,
+  isConfigInitialized
 }: TableContentProps) {
   const utils = api.useUtils();
 
   const {data: colData, isLoading: colLoading} = api.table.getColumnDataByTableId.useQuery({id: tableId});
-  const {data: rowData, isLoading: rowLoading} = api.table.getRowDataByOperations.useQuery<RowDataRaw[]>({
-    tableId: tableId,
-    filters: filterConfig,
-    filterCondition: filterCondition,
-    sorts: sortConfig,
-    search: searchTerm,
-  });
+  const {data: rowData, isLoading: rowLoading} = api.table.getRowDataByOperations.useQuery<RowDataRaw[]>(
+    {
+      tableId: tableId,
+      filters: filterConfig,
+      filterCondition: filterCondition,
+      sorts: sortConfig,
+      search: searchTerm,
+    },
+    {
+      enabled: isConfigInitialized,
+    }
+  );
 
 
   const columns = useMemo(
@@ -369,7 +387,7 @@ export function TableContent({
 
   return (
     <div className="w-full h-screen">
-      <div className="w-full h-full  overflow-y-auto">
+      <div className="w-full h-full overflow-y-auto">
         <table className="border-collapse" style={{ width: 'max-content'}}>
           <thead>
             {table.getHeaderGroups().map(headerGroup => (

@@ -72,7 +72,6 @@ model Column {
 
     cells     Cell[]
 
-    @@unique([tableId])
     @@index([tableId, order])
     @@index([tableId, type])
     @@map("columns")
@@ -119,7 +118,12 @@ model View {
   tableId     String
   table       Table    @relation(fields: [tableId], references: [id], onDelete: Cascade)
   name        String
-  config      Json     // JSON for view settings (filters, sort, visible columns)
+  order             Int      @default(0) 
+  filterConfig      Json?    // Separate field for filters
+  filterCondition   String?  // AND/OR condition
+  sortConfig        Json?    // Separate field for sorts
+  searchTerm        String?  // Search term
+  columnVisibility  Json?    // Column visibility settings
   createdAt   DateTime @default(now())
 
   @@index([tableId])

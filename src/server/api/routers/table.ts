@@ -5,13 +5,13 @@ import z from "zod";
 import { createTRPCRouter, publicProcedure } from "~/server/api/trpc";
 
 
-const filterSchema = z.object({
+export const filterSchema = z.object({
   columnId: z.string(),
   type: z.enum(['numGreaterThan', 'numSmallerThan', 'numEqualTo', 'textNotEmpty', 'textIsEmpty', 'textContains', 'textNotContains', 'textEqualTo']),
   value: z.string().optional(),
 })
 
-const sortSchema = z.object({
+export const sortSchema = z.object({
   columnId: z.string(),
   type: z.enum(['numASC', 'numDESC', 'textASC', 'textDESC']),
 })
@@ -82,8 +82,19 @@ export const tableRouter = createTRPCRouter({
         });
       } 
 
-      return table;
+      const view = await ctx.db.view.create({
+        data: {
+          tableId: table.id,
+          name: "Grid 1",
+          filterConfig: [],
+          filterCondition: "AND",
+          sortConfig: [],
+          searchTerm: null,
+          columnVisibility: {},
+        },
+      });
 
+      return table;
     }),
 
   renameTable: publicProcedure
@@ -428,7 +439,7 @@ export const tableRouter = createTRPCRouter({
     .input(z.object({
       tableId: z.string(),
       filters: z.array(filterSchema).default([]),
-      filterCondition: z.enum(["AND", "OR"]),
+      filterCondition: z.string(),
       sorts: z.array(sortSchema).default([]),
       search: z.string().optional(),
     }))
@@ -544,12 +555,22 @@ export const tableRouter = createTRPCRouter({
       const groupBySQL = `GROUP BY ${groupByClauses.join(", ")}`;
 
 
-      // searching
-      let searchParam: string | undefined;
-      if (input.search) {
-        searchParam = `%${input.search}%`;
-        filterParams.push(searchParam);
-      }
+    // searching
+    let searchClause = "";
+    if (input.search) {
+      const searchParam = `%${input.search}%`;
+      filterParams.push(searchParam);
+      searchClause = `
+        AND EXISTS (
+          SELECT 1 FROM "Cell" sc
+          WHERE sc."rowId" = r.id
+            AND (
+              sc."textValue" ILIKE $${filterParams.length}
+              OR CAST(sc."numberValue" AS TEXT) ILIKE $${filterParams.length}
+            )
+        )
+      `;
+    }
 
 
       const sql = `
@@ -579,6 +600,7 @@ export const tableRouter = createTRPCRouter({
         ${joinClauses.join("\n")}
         WHERE r."tableId" = $1
         ${filterClause}
+        ${searchClause}
         ${groupBySQL}
         ${orderBySQL}
       `;

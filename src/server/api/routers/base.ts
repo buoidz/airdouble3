@@ -33,14 +33,18 @@ export const baseRouter = createTRPCRouter({
         });
 
         // 3. Create default columns in the first table
-        await ctx.db.column.createMany({
-          data: [
-            { name: "Name", type: ColumnType.TEXT, tableId: firstTable.id, order: 1 },
-            { name: "Notes", type: ColumnType.TEXT, tableId: firstTable.id, order: 2 },
-            { name: "Assignee", type: ColumnType.TEXT, tableId: firstTable.id, order: 3 },
-          ],
-        });
-                
+        const defaultColumns = [
+          { name: "Name", type: ColumnType.TEXT, order: 1 },
+          { name: "Notes", type: ColumnType.TEXT, order: 2 },
+          { name: "Assignee", type: ColumnType.TEXT, order: 3 },
+        ];
+
+        for (const col of defaultColumns) {
+          await ctx.db.column.create({
+            data: { ...col, tableId: firstTable.id },
+          });
+        }
+                        
         // 4. Create three empty rows in the first table with empty cells for each column
         const createdColumn = await ctx.db.column.findMany({where: {tableId: firstTable.id}});
 
@@ -58,8 +62,29 @@ export const baseRouter = createTRPCRouter({
           });
         } 
 
+        // Set all columns to visible by default
+        const columnVisibility: Record<string, boolean> = {};
+        createdColumn.forEach(col => {
+          columnVisibility[col.id] = true;
+        });
+
+        const view = await ctx.db.view.create({
+          data: {
+            tableId: firstTable.id,
+            name: "Grid 1",
+            filterConfig: [],
+            filterCondition: "AND",
+            sortConfig: [],
+            searchTerm: null,
+            columnVisibility: {},
+          },
+        });
+
         return base;
       });
+
+
+
 
       return base;
     }),
@@ -169,7 +194,7 @@ export const baseRouter = createTRPCRouter({
 
       return table;
     }),
-    
+
 
     getAllTablesBaseById: publicProcedure
       .input(z.object({ id: z.string() }))

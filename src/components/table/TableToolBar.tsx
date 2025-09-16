@@ -157,7 +157,6 @@ function FilterMenu({
   filterCondition,
   setFilterCondition,
 }: FilterMenuProps) {
-  const utils = api.useUtils();
   const addFilter = () => {
     const availableColumn = columns?.find((col) => !filterConfig.some((f) => f.columnId === col.id));
     if (availableColumn) {
@@ -167,7 +166,6 @@ function FilterMenu({
         value: ''
       }]);
     }
-    void utils.table.getRowDataByOperations.invalidate();
   };
 
   const updateFilter = (index: number, field: keyof FilterConfig, val: string) => {
@@ -186,12 +184,10 @@ function FilterMenu({
 
       return newFilters;
     });
-    void utils.table.getRowDataByOperations.invalidate();
   };
 
   const removeFilter = (index: number) => {
     setFilterConfig(filterConfig.filter((_, i) => i !== index));
-    void utils.table.getRowDataByOperations.invalidate();
   };
 
   const filteredColumnNames = filterConfig
@@ -325,7 +321,6 @@ function SortMenu({
       columnId: columnId,
       type: colType===ColumnType.NUMBER ? "numASC" : "textASC",
     }]);
-    void utils.table.getRowDataByOperations.invalidate();
   };
 
   const addSortNoColumnId = () => {
@@ -336,7 +331,6 @@ function SortMenu({
         type: availableColumn.type === "TEXT" ? 'textASC' : 'numASC',
       }]);
     }
-    void utils.table.getRowDataByOperations.invalidate();
   };
 
   const updateSort = (index: number, field: keyof SortConfig, val: string) => {
@@ -353,12 +347,10 @@ function SortMenu({
 
       return newSorts;
     });
-    void utils.table.getRowDataByOperations.invalidate();
   };
 
   const removeSort = (index: number) => {
     setSortConfig(sortConfig.filter((_, i) => i !== index));
-    void utils.table.getRowDataByOperations.invalidate();
   };
   
   const sortedColumnNames = sortConfig

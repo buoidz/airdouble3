@@ -224,7 +224,6 @@ export function TableListBar({tables, baseId, selectedTableId, setSelectedTableI
   }
 
   const tableCorlor = lighten(0.3, getRainbowColorFromId(baseId));
-  console.log(tableCorlor);
 
   return (
     <div 
