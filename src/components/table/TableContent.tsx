@@ -1,4 +1,4 @@
-import { api } from "~/utils/api";
+import { api, type RouterOutputs } from "~/utils/api";
 import { LoadingPage, LoadingSpinner } from "../LoadingPage";
 import React, { useEffect, useMemo, useState } from "react";
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -15,7 +15,10 @@ type CellValue = {
   containSearchTerm: boolean;
 };
 
+type GetRowDataOutput = RouterOutputs["table"]["getRowDataByOperations"];
+
 type RowData = Record<string, CellValue>;
+
 
 type EditableCellProps = {
   initialValue: string; 
@@ -240,7 +243,13 @@ export function TableContent({
   const utils = api.useUtils();
 
   const {data: colData, isLoading: colLoading} = api.table.getColumnDataByTableId.useQuery({id: tableId});
-  const {data: rowData, isLoading: rowLoading} = api.table.getRowDataByOperations.useQuery<RowDataRaw[]>(
+  const {
+    data, 
+    fetchNextPage, 
+    hasNextPage, 
+    isFetchingNextPage,
+    isLoading: rowLoading
+  } = api.table.getRowDataByOperations.useInfiniteQuery(
     {
       tableId: tableId,
       filters: filterConfig,
@@ -249,9 +258,15 @@ export function TableContent({
       search: searchTerm,
     },
     {
+      getNextPageParam: (lastPage) => lastPage.nextCursor,
       enabled: isViewReady
     }
   );
+
+  const rowData = useMemo(() => {
+    if (!data?.pages) return [];
+    return data.pages.flatMap(page => page.cleanRows);
+  }, [data]);
 
 
   const columns = useMemo(
@@ -305,7 +320,7 @@ export function TableContent({
       setNumCellsContainSearchTerm?.(cellsWithSearchTerm);
 
       return mappedRows;
-    }, [rowData, setNumCellsContainSearchTerm, setNumCellsContainSearchTerm]
+    }, [rowData, setNumFieldsContainSearchTerm, setNumCellsContainSearchTerm]
   );
 
   // All columns visible by default
@@ -338,8 +353,27 @@ export function TableContent({
     count: rows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 34,
-    overscan: 100,
+    overscan: 20,
   })
+
+  useEffect(() => {
+    const [lastItem] = [...virtualizer.getVirtualItems()].reverse();
+    console.log("Last virtual item:", lastItem);
+    console.log(rows.length)
+    
+    if (
+      lastItem &&
+      lastItem.index >= rows.length - 100 &&
+      hasNextPage &&
+      !isFetchingNextPage &&
+      rows.length > 0
+    ) {
+      void fetchNextPage();
+      console.log("fetchNextPage")
+    }
+  }, [virtualizer.getVirtualItems(), rows.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+
 
 
   const addRowMutation = api.table.addRow.useMutation({
@@ -379,7 +413,7 @@ export function TableContent({
   };
 
   const isColumnHighlightedSearch = (columnId: string) => {
-    return rowData?.some(row =>
+    return rowData?.some((row: RowDataRaw) =>
       row.cells.some(cell => cell.columnId === columnId && cell.containSearchTerm)
     );
   };

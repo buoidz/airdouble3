@@ -509,7 +509,7 @@ export const tableRouter = createTRPCRouter({
       })
 
       await ctx.db.cell.createMany({
-        data: rows.map((rows) => ({
+        data: rows.map((rows) => ({ 
           rowId: rows.id,
           columnId: newCol.id,
           textValue: newCol.type === ColumnType.TEXT ? faker.lorem.words({min: 1, max: 3}) : null,
@@ -525,6 +525,8 @@ export const tableRouter = createTRPCRouter({
       filterCondition: z.string(),
       sorts: z.array(sortSchema).default([]),
       search: z.string().optional(),
+      limit: z.number().min(1).max(1000).default(100),
+      cursor: z.string().nullish(),
     }))
     .query(async ({ ctx, input }) => {
       const currentUser = ctx.currentUser;
@@ -640,21 +642,33 @@ export const tableRouter = createTRPCRouter({
 
     // searching
     let searchClause = "";
+    let searchParamIndex: number | null = null;
     if (input.search) {
       const searchParam = `%${input.search}%`;
       filterParams.push(searchParam);
+      searchParamIndex = filterParams.length;
       searchClause = `
         AND EXISTS (
           SELECT 1 FROM "Cell" sc
           WHERE sc."rowId" = r.id
             AND (
-              sc."textValue" ILIKE $${filterParams.length}
-              OR CAST(sc."numberValue" AS TEXT) ILIKE $${filterParams.length}
+              sc."textValue" ILIKE $${searchParamIndex}
+              OR CAST(sc."numberValue" AS TEXT) ILIKE $${searchParamIndex}
             )
         )
       `;
     }
 
+    // pagination
+    let cursorClause = "";
+    if (input.cursor) {
+      filterParams.push(input.cursor);
+      cursorClause = `AND r.id > $${filterParams.length}`;
+    }
+
+    // limit
+    filterParams.push(input.limit + 1);  // +1 to check if there’s a next page
+    const limitSQL = `LIMIT $${filterParams.length}`;
 
       const sql = `
         SELECT r.*,
@@ -666,15 +680,14 @@ export const tableRouter = createTRPCRouter({
                     'textValue', c."textValue",
                     'numberValue', c."numberValue",
                     'containSearchTerm',
-                      CASE
-                        WHEN $${filterParams.length} IS NOT NULL
-                        AND (
-                              c."textValue" ILIKE $${filterParams.length}
-                              OR CAST(c."numberValue" AS TEXT) ILIKE $${filterParams.length}
-                            )
-                        THEN true
-                        ELSE false
-                      END
+                      ${searchParamIndex
+                        ? `CASE
+                            WHEN c."textValue" ILIKE $${searchParamIndex}
+                              OR CAST(c."numberValue" AS TEXT) ILIKE $${searchParamIndex}
+                            THEN true
+                            ELSE false
+                          END`
+                        : "false"}
                   )
                 ) FILTER (WHERE c.id IS NOT NULL), '[]'
               ) AS cells
@@ -682,14 +695,23 @@ export const tableRouter = createTRPCRouter({
         LEFT JOIN "Cell" c ON c."rowId" = r.id
         ${joinClauses.join("\n")}
         WHERE r."tableId" = $1
+        ${cursorClause}
         ${filterClause}
         ${searchClause}
         ${groupBySQL}
         ${orderBySQL}
+        ${limitSQL}
+
       `;
 
 
       const rows = await ctx.db.$queryRawUnsafe<RowDataRaw[]>(sql, ...filterParams);
+
+      let nextCursor: string | null = null;
+      if (rows.length > input.limit) {
+        const nextItem = rows.pop(); // remove the extra row
+        nextCursor = nextItem?.id ?? null;
+      }
 
       const cleanRows: RowDataRaw[] = rows.map(row => ({
         ...row,
@@ -702,7 +724,10 @@ export const tableRouter = createTRPCRouter({
         }))
       }))
 
-      return cleanRows;
+      return {
+        cleanRows,
+        nextCursor
+      };
     })
 
 
