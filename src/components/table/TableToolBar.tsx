@@ -1,7 +1,7 @@
 import { ArrowUpDown, ChevronDown, CircleQuestionMark, ExternalLink, EyeOff, ListChevronsUpDown, ListFilter, ListPlus, MenuIcon, PaintBucket, Search, SquareLibrary, Table2, Trash, X } from "lucide-react";
 import type { FilterConfig, FilterType, SortConfig, SortType } from "./TableMain";
 import { api } from "~/utils/api";
-import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
+import { Menu, MenuButton, MenuItems } from '@headlessui/react'
 import { ColumnType } from "@prisma/client";
 import { useMemo, useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
@@ -100,7 +100,7 @@ function HideFieldsMenu({
 
   const numHiddenColumn = useMemo(
     () => columns.filter(col => !columnVisibility[col.id]).length,
-    [columnVisibility]
+    [columnVisibility, columns]
   )
 
   const columnsSearched = useMemo(
@@ -375,8 +375,6 @@ function SortMenu({
   sortConfig,
   setSortConfig,
 }: SortMenuProps) {  
-  const utils = api.useUtils();
-
   const addSort = (columnId: string, colType: ColumnType) => {
     setSortConfig([...sortConfig, {
       columnId: columnId,
@@ -534,11 +532,9 @@ function SearchMenu({
   numFields,
   numCells,
 } : SearchMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
 
   const handleClose = () => {
     setSearchTerm("");
-    setIsOpen(false);
   }
 
   const displayText = () => {
@@ -563,7 +559,6 @@ function SearchMenu({
         className={`p-2 rounded-sm focus:ring-0 focus:outline-none hover:bg-gray-100 hover:cursor-pointer ${
           searchTerm === "" ? "" : "bg-yellow-200"
         }`}
-        onClick={() => setIsOpen(true)}
       >
         <Search size={16} />
       </MenuButton>

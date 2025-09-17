@@ -68,7 +68,7 @@ export const baseRouter = createTRPCRouter({
           columnVisibility[col.id] = true;
         });
 
-        const view = await ctx.db.view.create({
+        await ctx.db.view.create({
           data: {
             tableId: firstTable.id,
             name: "Grid 1",

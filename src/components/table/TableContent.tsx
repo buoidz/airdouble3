@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { flexRender, getCoreRowModel, useReactTable, type CellContext, type VisibilityState } from "@tanstack/react-table";
 import { Baseline, Hash, Plus } from "lucide-react";
-import { ColumnType, type View } from "@prisma/client";
+import { ColumnType } from "@prisma/client";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import type { FilterConfig, SortConfig } from "./TableMain";
 import type { RowDataRaw } from "~/server/api/routers/table";
@@ -15,7 +15,6 @@ type CellValue = {
   containSearchTerm: boolean;
 };
 
-type GetRowDataOutput = RouterOutputs["table"]["getRowDataByOperations"];
 
 type RowData = Record<string, CellValue>;
 
@@ -201,15 +200,6 @@ function AddColumnMenu({tableId}: {tableId: string}) {
     </Menu>
   )
 }
-
-interface ViewConfig {
-  filterConfig: FilterConfig[];
-  filterCondition: "AND" | "OR";
-  sortConfig: SortConfig[];
-  searchTerm: string;
-  columnVisibility: VisibilityState;
-}
-
 
 
 

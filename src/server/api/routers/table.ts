@@ -83,7 +83,7 @@ export const tableRouter = createTRPCRouter({
         });
       } 
 
-      const view = await ctx.db.view.create({
+      await ctx.db.view.create({
         data: {
           tableId: table.id,
           name: "Grid 1",
@@ -424,7 +424,7 @@ export const tableRouter = createTRPCRouter({
         orderBy: { order: "desc" }
       })
       
-      let currentOrder = oldRows ? oldRows.order + 1 : 0;
+      const currentOrder = oldRows ? oldRows.order + 1 : 0;
       const batchSize = 1000;
 
       await ctx.db.$transaction(async () => {
