@@ -20,24 +20,43 @@ type ColumnObj = {
 
 function Add100KMenu({tableId}: {tableId: string}) {
   const utils = api.useUtils();
-  const add100KRowsMutation = api.table.add100kRows.useMutation({
-    onSuccess: () => {
-      void utils.table.getRowDataByOperations.invalidate();
-    }
-  })
+  const addRowsMutation = api.table.add1000Rows.useMutation(); // smaller mutation
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState(0);
 
-  const handleAddRowMutation = () => {
-    add100KRowsMutation.mutate({ tableId: tableId })
-  }
+  const handleAddRows = async () => {
+    setIsRunning(true);
+    setProgress(0);
+
+    for (let i = 0; i < 100; i++) {
+      try {
+        await addRowsMutation.mutateAsync({ tableId });
+        setProgress((prev) => prev + 1);
+
+        if ((i + 1) % 10 === 0) {
+          await utils.table.getRowDataByOperations.invalidate();
+        }
+      } catch (err) {
+        console.error(`Batch ${i + 1} failed`, err);
+        break;
+      }
+    }
+
+    await utils.table.getRowDataByOperations.invalidate(); 
+    setIsRunning(false);
+  };
+
 
   return (
     <button 
       className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer focus:ring-0 focus:outline-none"
-      onClick={handleAddRowMutation}
-      disabled={add100KRowsMutation.isPending}
+      onClick={handleAddRows}
+      disabled={addRowsMutation.isPending}
     >
-      {add100KRowsMutation.isPending ?  <LoadingSpinner /> :<ListPlus size={14} />}
-      <div className="text-xs ">Add 100K Rows</div>
+      {isRunning ?  <LoadingSpinner /> :<ListPlus size={14} />}
+      <div className="text-xs">
+        {isRunning ? `Adding... (${progress}%)` : "Add 100K Rows"}
+      </div>
     </button>
   )
 }

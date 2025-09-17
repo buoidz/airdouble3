@@ -1,6 +1,7 @@
 import { api } from "~/utils/api";
 import { LoadingPage, LoadingSpinner } from "../LoadingPage";
-import { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { useVirtualizer } from '@tanstack/react-virtual'
 import { flexRender, getCoreRowModel, useReactTable, type CellContext, type VisibilityState } from "@tanstack/react-table";
 import { Baseline, Hash, Plus } from "lucide-react";
 import { ColumnType, type View } from "@prisma/client";
@@ -263,9 +264,9 @@ export function TableContent({
           minSize: 50,
           maxSize: 500,
           cell: (props: CellContext<RowData, unknown>) => {
-            const cellValue = props.getValue() as CellValue;
+            const cellValue = props.getValue() as CellValue | undefined;
             return <EditableCell
-              initialValue={cellValue.value}
+              initialValue={cellValue?.value ?? ""}
               tableId={tableId}
               rowIndex={props.row.index}
               columnId={col.id}
@@ -331,6 +332,15 @@ export function TableContent({
     onColumnVisibilityChange: setColumnVisibility,
   });
 
+  const parentRef = React.useRef<HTMLDivElement>(null)
+
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 34,
+    overscan: 100,
+  })
+
 
   const addRowMutation = api.table.addRow.useMutation({
     onSuccess: () => {
@@ -386,9 +396,9 @@ export function TableContent({
 
 
   return (
-    <div className="w-full h-screen">
-      <div className="w-full h-full overflow-y-auto">
-        <table className="border-collapse" style={{ width: 'max-content'}}>
+    <div className="w-full">
+      <div ref={parentRef} className="w-full h-full overflow-y-auto">
+        <table className="border-collapse" style={{ width: 'max-content', height: `${virtualizer.getTotalSize()}px`}}>
           <thead>
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}> 
@@ -431,25 +441,36 @@ export function TableContent({
             ))}
           </thead>
 
-          <tbody>
-            {table.getRowModel().rows.map((row, index) => {
+          <tbody style={{ height: `${virtualizer.getTotalSize()}px`, position: 'relative' }}>
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const row = table.getRowModel().rows[virtualRow.index];
+              if (!row) return;
+
               const firstCellData = row.getVisibleCells()[0]?.getValue() as CellValue;
               const isFirstCellHighlighted = firstCellData?.containSearchTerm;
 
               return (
-                <tr key={row.id}>
+                <tr 
+                  key={row.id}
+                  style={{
+                    position: 'absolute',
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
                   <th 
                     className={`text-xs font-normal text-gray-500 w-25 pr-6 py-2 border-b border-gray-300 ${
                       isFirstCellHighlighted ? 'bg-yellow-100' : ''
                     }`}
                   >
-                    {index}
+                    {virtualRow.index + 1}
                   </th>
                   {row.getVisibleCells().map(cell => {
                     const isHighlightedFilter = isColumnHighlightedFilter(cell.column.id)
                     const isHighlightedSort = isColumnHighlightedSort(cell.column.id);
-                    const cellData = cell.getValue() as CellValue;
-                    const isHighlightedSearch = cellData.containSearchTerm;
+                    const cellData = cell.getValue() as CellValue | undefined;
+                    const isHighlightedSearch = cellData?.containSearchTerm ?? false;
+
 
                     const getBgColor = () => {
                       if (isHighlightedSearch) return 'bg-yellow-100';

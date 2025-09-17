@@ -378,7 +378,7 @@ export const tableRouter = createTRPCRouter({
       });
     }),
 
-  add100kRows: publicProcedure
+  add1000Rows: publicProcedure
     .input(z.object({
       tableId: z.string(),
     }))
@@ -425,9 +425,8 @@ export const tableRouter = createTRPCRouter({
       
       let currentOrder = oldRows ? oldRows.order + 1 : 0;
       const batchSize = 1000;
-      const numBatch = 1000 / 1000;
 
-      for (let i = 0; i < numBatch; i++) {
+      await ctx.db.$transaction(async () => {
         const dataRows = Array.from({ length: batchSize}, (_, index) => ({
           tableId: input.tableId,
           order: currentOrder + index,
@@ -458,9 +457,7 @@ export const tableRouter = createTRPCRouter({
             }))
           )),
         });
-
-        currentOrder += batchSize;
-      }
+      });
     }),
 
 

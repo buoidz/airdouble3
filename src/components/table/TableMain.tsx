@@ -175,7 +175,7 @@ export function TableMain({baseId}: {baseId: string}) {
         setColumnVisibility={setColumnVisibility}
       /> 
       
-      <div className="h-full flex flex-row pl-70"  style={{ height: `calc(100vh - 56px - 32px - 48px)` }}>
+      <div className="flex flex-row pl-70 overflow-hidden"  style={{ height: `calc(100vh - 56px - 32px - 48px)` }}>
         <TableViewSideBar   
           tableId={selectedTableId}
           views={views}
