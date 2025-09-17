@@ -363,7 +363,7 @@ export function TableContent({
     
     if (
       lastItem &&
-      lastItem.index >= rows.length - 100 &&
+      lastItem.index >= rows.length - 500 &&
       hasNextPage &&
       !isFetchingNextPage &&
       rows.length > 0
@@ -515,8 +515,8 @@ export function TableContent({
                     return (
                       <td 
                         key={cell.id} 
-                        className={`border-r border-b border-gray-300 px-4 py-2 text-sm text-gray-800 ${getBgColor()}`}
-                        style={{ width: cell.column.getSize() }}
+                        className={`border-r border-b border-gray-300 px-4 text-sm text-gray-800 ${getBgColor()}`}
+                        style={{ width: cell.column.getSize(), height: `${virtualRow.size}px`, }}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>

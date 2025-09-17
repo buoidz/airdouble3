@@ -26,6 +26,7 @@ export type CellData = {
 
 export type RowDataRaw = {
   id: string;
+  order: number;
   cells: CellData[];
 };
 
@@ -525,8 +526,8 @@ export const tableRouter = createTRPCRouter({
       filterCondition: z.string(),
       sorts: z.array(sortSchema).default([]),
       search: z.string().optional(),
-      limit: z.number().min(1).max(1000).default(100),
-      cursor: z.string().nullish(),
+      limit: z.number().min(1).max(1000).default(500),
+      cursor: z.number().nullish(),
     }))
     .query(async ({ ctx, input }) => {
       const currentUser = ctx.currentUser;
@@ -557,6 +558,7 @@ export const tableRouter = createTRPCRouter({
           message: "You do not have permission to update this table.",
         });
       }   
+
 
       // filtering
       const filterFragments: string[] = [];
@@ -663,72 +665,71 @@ export const tableRouter = createTRPCRouter({
     let cursorClause = "";
     if (input.cursor) {
       filterParams.push(input.cursor);
-      cursorClause = `AND r.id > $${filterParams.length}`;
+      cursorClause = `AND r.order > $${filterParams.length}`;
     }
 
     // limit
     filterParams.push(input.limit + 1);  // +1 to check if there’s a next page
     const limitSQL = `LIMIT $${filterParams.length}`;
 
-      const sql = `
-        SELECT r.*,
-              COALESCE(
-                json_agg(
-                  json_build_object(
-                    'id', c.id,
-                    'columnId', c."columnId",
-                    'textValue', c."textValue",
-                    'numberValue', c."numberValue",
-                    'containSearchTerm',
-                      ${searchParamIndex
-                        ? `CASE
-                            WHEN c."textValue" ILIKE $${searchParamIndex}
-                              OR CAST(c."numberValue" AS TEXT) ILIKE $${searchParamIndex}
-                            THEN true
-                            ELSE false
-                          END`
-                        : "false"}
-                  )
-                ) FILTER (WHERE c.id IS NOT NULL), '[]'
-              ) AS cells
-        FROM "rows" r
-        LEFT JOIN "Cell" c ON c."rowId" = r.id
-        ${joinClauses.join("\n")}
-        WHERE r."tableId" = $1
-        ${cursorClause}
-        ${filterClause}
-        ${searchClause}
-        ${groupBySQL}
-        ${orderBySQL}
-        ${limitSQL}
+    const sql = `
+      SELECT r.*,
+            COALESCE(
+              json_agg(
+                json_build_object(
+                  'id', c.id,
+                  'columnId', c."columnId",
+                  'textValue', c."textValue",
+                  'numberValue', c."numberValue",
+                  'containSearchTerm',
+                    ${searchParamIndex
+                      ? `CASE
+                          WHEN c."textValue" ILIKE $${searchParamIndex}
+                            OR CAST(c."numberValue" AS TEXT) ILIKE $${searchParamIndex}
+                          THEN true
+                          ELSE false
+                        END`
+                      : "false"}
+                )
+              ) FILTER (WHERE c.id IS NOT NULL), '[]'
+            ) AS cells
+      FROM "rows" r
+      LEFT JOIN "Cell" c ON c."rowId" = r.id
+      ${joinClauses.join("\n")}
+      WHERE r."tableId" = $1
+      ${cursorClause}
+      ${filterClause}
+      ${searchClause}
+      ${groupBySQL}
+      ${orderBySQL}
+      ${limitSQL}
 
-      `;
+    `;
 
+    const rows = await ctx.db.$queryRawUnsafe<RowDataRaw[]>(sql, ...filterParams);
 
-      const rows = await ctx.db.$queryRawUnsafe<RowDataRaw[]>(sql, ...filterParams);
+    let nextCursor: number | null = null;
+    if (rows.length > input.limit) {
+      const nextItem = rows.pop(); // remove the extra row
+      nextCursor = nextItem?.order ?? null;
+    }
 
-      let nextCursor: string | null = null;
-      if (rows.length > input.limit) {
-        const nextItem = rows.pop(); // remove the extra row
-        nextCursor = nextItem?.id ?? null;
-      }
-
-      const cleanRows: RowDataRaw[] = rows.map(row => ({
-        ...row,
-        cells: row.cells.map((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null; containSearchTerm: true | false}) => ({
-          id: cell.id,
-          columnId: cell.columnId,
-          textValue: cell.textValue,
-          numberValue: cell.numberValue,
-          containSearchTerm: cell.containSearchTerm,
-        }))
+    const cleanRows: RowDataRaw[] = rows.map(row => ({
+      ...row,
+      cells: row.cells.map((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null; containSearchTerm: true | false}) => ({
+        id: cell.id,
+        columnId: cell.columnId,
+        textValue: cell.textValue,
+        numberValue: cell.numberValue,
+        containSearchTerm: cell.containSearchTerm,
       }))
+    }))
 
-      return {
-        cleanRows,
-        nextCursor
-      };
-    })
+    return {
+      cleanRows,
+      nextCursor
+    };
+  })
 
 
 })
