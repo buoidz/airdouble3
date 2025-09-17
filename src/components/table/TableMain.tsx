@@ -59,7 +59,6 @@ export function TableMain({baseId}: {baseId: string}) {
     setFilterConfig(Array.isArray(view.filterConfig) ? view.filterConfig as unknown as FilterConfig[] : []);
     setFilterCondition(view.filterCondition === "OR" ? "OR" : "AND");
     setSortConfig(Array.isArray(view.sortConfig) ? view.sortConfig as unknown as SortConfig[] : []);
-    setSearchTerm(view.searchTerm ?? "");
     setColumnVisibility(
       typeof view.columnVisibility === "object" && view.columnVisibility !== null
         ? view.columnVisibility as VisibilityState
@@ -73,6 +72,7 @@ export function TableMain({baseId}: {baseId: string}) {
 
   const handleSwitchView = (view: View) => {
     applyViewToState(view);
+    setSearchTerm("");
   };
 
 
@@ -82,10 +82,9 @@ export function TableMain({baseId}: {baseId: string}) {
       JSON.stringify(filterConfig) !== JSON.stringify(selectedView.filterConfig ?? []) ||
       filterCondition !== (selectedView.filterCondition ?? "AND") ||
       JSON.stringify(sortConfig) !== JSON.stringify(selectedView.sortConfig ?? []) ||
-      searchTerm !== (selectedView.searchTerm ?? "") ||
       JSON.stringify(columnVisibility) !== JSON.stringify(selectedView.columnVisibility ?? {})
     );
-  }, [filterConfig, filterCondition, sortConfig, searchTerm, columnVisibility, selectedView]);
+  }, [filterConfig, filterCondition, sortConfig, columnVisibility, selectedView]);
 
   useEffect(() => {
     if (!selectedView || !isDirty) return;
@@ -97,13 +96,12 @@ export function TableMain({baseId}: {baseId: string}) {
         filterConfig,
         filterCondition,
         sortConfig,
-        searchTerm,
         columnVisibility,
       });
     }, 1000); 
 
     return () => clearTimeout(timeout);
-  }, [filterConfig, filterCondition, sortConfig, searchTerm, columnVisibility]);
+  }, [filterConfig, filterCondition, sortConfig, columnVisibility]);
 
   useEffect(() => {
     if (views && views.length > 0 && !selectedView && views[0]) {

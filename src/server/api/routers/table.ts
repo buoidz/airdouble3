@@ -328,7 +328,7 @@ export const tableRouter = createTRPCRouter({
       if (!currentUser) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
-          message: "You must be logged in to update a cell.",
+          message: "You must be logged in to add rows.",
         });
       }
 
@@ -377,6 +377,92 @@ export const tableRouter = createTRPCRouter({
         })),
       });
     }),
+
+  add100kRows: publicProcedure
+    .input(z.object({
+      tableId: z.string(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const currentUser = ctx.currentUser;
+      if (!currentUser) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to add rows.",
+        });
+      }
+
+      const table = await ctx.db.table.findUnique({
+        where: { id: input.tableId },
+      });
+      if (!table) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Table not found.",
+        });
+      }
+      if (table.ownerId !== currentUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to update this table.",
+        });
+      }  
+      
+      const columns = await ctx.db.column.findMany({
+        where: { tableId: input.tableId }
+      })
+
+      if (!columns) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Table columns not found.",
+        })
+      }
+
+      const oldRows = await ctx.db.row.findFirst({
+        where: { tableId: input.tableId },
+        orderBy: { order: "desc" }
+      })
+      
+      let currentOrder = oldRows ? oldRows.order + 1 : 0;
+      const batchSize = 1000;
+      const numBatch = 1000 / 1000;
+
+      for (let i = 0; i < numBatch; i++) {
+        const dataRows = Array.from({ length: batchSize}, (_, index) => ({
+          tableId: input.tableId,
+          order: currentOrder + index,
+        }));
+
+        await ctx.db.row.createMany({
+          data: dataRows
+        })
+
+        const insertedRows = await ctx.db.row.findMany({
+          where: {
+            tableId: input.tableId,
+            order: {
+              gte: currentOrder,
+              lt: currentOrder + batchSize,
+            },
+          },
+          orderBy: { order: "asc" },
+        });
+
+        await ctx.db.cell.createMany({
+          data: columns.flatMap((column) => (
+            insertedRows.map((row) => ({
+              rowId: row.id,
+              columnId: column.id,
+              textValue: column.type === ColumnType.TEXT ? faker.lorem.words({min: 1, max: 3}) : null,
+              numberValue: column.type === ColumnType.NUMBER ? faker.number.int({ max: 1000000000000}) : null,
+            }))
+          )),
+        });
+
+        currentOrder += batchSize;
+      }
+    }),
+
 
 
   addColumns: publicProcedure

@@ -380,7 +380,7 @@ export function TableContent({
     return <LoadingPage />
   }
   if(!rowData || !colData || colData.length === 0){
-    return <div>No data found</div>
+    return <div></div>
   }
 
 

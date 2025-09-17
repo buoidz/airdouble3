@@ -1,10 +1,11 @@
-import { ArrowUpDown, ChevronDown, CircleQuestionMark, ExternalLink, EyeOff, ListChevronsUpDown, ListFilter, MenuIcon, PaintBucket, Search, SquareLibrary, Table2, Trash, X } from "lucide-react";
+import { ArrowUpDown, ChevronDown, CircleQuestionMark, ExternalLink, EyeOff, ListChevronsUpDown, ListFilter, ListPlus, MenuIcon, PaintBucket, Search, SquareLibrary, Table2, Trash, X } from "lucide-react";
 import type { FilterConfig, FilterType, SortConfig, SortType } from "./TableMain";
 import { api } from "~/utils/api";
-import { Menu, MenuButton, MenuItems } from '@headlessui/react'
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import { ColumnType } from "@prisma/client";
 import { useMemo, useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
+import { LoadingSpinner } from "../LoadingPage";
 
 type ColumnObj = {
   tableId: string;
@@ -15,6 +16,32 @@ type ColumnObj = {
   type: ColumnType;
   order: number;
 };
+
+
+function Add100KMenu({tableId}: {tableId: string}) {
+  const utils = api.useUtils();
+  const add100KRowsMutation = api.table.add100kRows.useMutation({
+    onSuccess: () => {
+      void utils.table.getRowDataByOperations.invalidate();
+    }
+  })
+
+  const handleAddRowMutation = () => {
+    add100KRowsMutation.mutate({ tableId: tableId })
+  }
+
+  return (
+    <button 
+      className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer focus:ring-0 focus:outline-none"
+      onClick={handleAddRowMutation}
+      disabled={add100KRowsMutation.isPending}
+    >
+      {add100KRowsMutation.isPending ?  <LoadingSpinner /> :<ListPlus size={14} />}
+      <div className="text-xs ">Add 100K Rows</div>
+    </button>
+  )
+}
+
 
 type HideFieldsMenuProps = {
   columns: ColumnObj[],
@@ -27,6 +54,7 @@ function HideFieldsMenu({
   columnVisibility,
   setColumnVisibility
 }: HideFieldsMenuProps) {
+  const [searchTermHiddenFields, setSearchTermHiddenFields] = useState("");
 
   const toggleColumnVisibility = (columnId: string) => {
     setColumnVisibility((prev) => ({
@@ -56,9 +84,16 @@ function HideFieldsMenu({
     [columnVisibility]
   )
 
+  const columnsSearched = useMemo(
+    () =>
+      columns.slice(1).filter((col) => col.name.toLowerCase().includes(searchTermHiddenFields.toLowerCase())),
+    [columns, searchTermHiddenFields]
+  );
+
+
   return (
     <Menu>
-      <MenuButton className={`p-2 rounded-sm flex flex-row border-2 border-white items-center gap-2 focus:ring-0 focus:outline-none ${
+      <MenuButton className={`p-2 rounded-sm flex flex-row border-2 border-white items-center gap-2 hover:cursor-pointer focus:ring-0 focus:outline-none ${
         numHiddenColumn === 0 ? "hover:bg-gray-100" : "bg-blue-100 hover:border-gray-300"
       }`}
       >
@@ -75,15 +110,22 @@ function HideFieldsMenu({
 
       <MenuItems 
         anchor="bottom"
-        className="[--anchor-gap:3px] z-60 w-75 rounded-md border border-gray-200 shadow-lg bg-white py-2 px-4 focus:outline-none"
+        className="[--anchor-gap:3px] z-60 w-75 rounded-md border border-gray-200 shadow-lg bg-white py-2 px-4 focus:ring-0 focus:outline-none"
       >            
         <div className="flex flex-row items-center justify-between gap-1">
-          <span className="text-gray-500 text-xs py-2">Find a fields</span>
+          <input 
+            type="text"
+            value={searchTermHiddenFields}
+            onChange={(e) => setSearchTermHiddenFields(e.target.value)}
+            className="text-gray-500 text-xs py-2 focus:ring-0 focus:outline-none"
+            placeholder="Find a fields"
+          />
+            
           <CircleQuestionMark className="text-gray-500" size={12} />  
         </div>
         <div className="w-full border-b-2 border-gray-300"></div>
         <div className="py-3 flex flex-col gap-1">
-          {columns.slice(1).map((col) => (
+          {columnsSearched.map((col) => (
             <button 
               key={col.id} 
               className="px-2 text-start text-sm rounded-sm flex flex-row items-center gap-6 hover:bg-gray-100 focus:ring-0 focus:outline-none"
@@ -198,7 +240,7 @@ function FilterMenu({
   return (
     <Menu>
       <MenuButton 
-        className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white focus:ring-0 focus:outline-none ${
+        className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white hover:cursor-pointer focus:ring-0 focus:outline-none ${
           filterConfig.length > 0 ? 'bg-green-200  hover:border-gray-300' : 'hover:bg-gray-100'
         }`}
       >
@@ -362,7 +404,7 @@ function SortMenu({
     <>
       <Menu>
         <MenuButton 
-          className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white focus:ring-0 focus:outline-none ${
+          className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white hover:cursor-pointer focus:ring-0 focus:outline-none ${
             sortConfig.length > 0 ? 'bg-red-100  hover:border-gray-300' : 'hover:bg-gray-100'
           }`}
         >
@@ -497,37 +539,39 @@ function SearchMenu({
   };
 
   return (
-    <div className="relative">
-      <button 
-        className="p-2 rounded-sm focus:ring-0 focus:outline-none hover:bg-gray-100"
-         onClick={() => setIsOpen(true)}
+    <Menu>
+      <MenuButton 
+        className={`p-2 rounded-sm focus:ring-0 focus:outline-none hover:bg-gray-100 hover:cursor-pointer ${
+          searchTerm === "" ? "" : "bg-yellow-200"
+        }`}
+        onClick={() => setIsOpen(true)}
       >
         <Search size={16} />
-      </button>
-      {isOpen && (
-        <div className="absolute top-full right-0 rounded-sm border-2 border-gray-300 bg-white inline-block">
-          <div className="flex flex-row gap-2 justify-between items-center m-1 mr-2">
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Find in view"
-              className="w-full px-1 text-xs font-semibold text-gray-700 py-1 focus:outline-none focus:ring-0"
-            />
-            <button
-              onClick={handleClose}
-              className="text-gray-500 hover:text-gray-800"
-            >
-              <X size={16} />
-            </button>
-          </div>
-          <div className="px-2 pt-0.5 pb-1 bg-gray-100 whitespace-nowrap">
-            <span className="text-[0.65rem] text-gray-700 ">{displayText()}</span>
-          </div>
+      </MenuButton>
+      <MenuItems
+        anchor="bottom end"
+        className="[--anchor-gap:4px] rounded-sm border border-gray-300 bg-white focus:outline-none focus:ring-0"
+      >
+        <div className="flex flex-row gap-2 justify-between items-center m-1 mr-2">
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Find in view"
+            className="w-full px-1 text-xs font-semibold text-gray-700 py-1 focus:outline-none focus:ring-0"
+          />
+          <button
+            onClick={handleClose}
+            className="text-gray-500 hover:text-gray-800"
+          >
+            <X size={16} />
+          </button>
         </div>
-      )}
-      
-    </div>
+        <div className="px-2 pt-0.5 pb-1 bg-gray-100 whitespace-nowrap">
+          <span className="text-[0.65rem] text-gray-700 ">{displayText()}</span>
+        </div>
+      </MenuItems>
+    </Menu>
     
   );
 }
@@ -571,10 +615,10 @@ export function TableToolBar({
     <div className="h-12 flex flex-row justify-between items-center border-b border-gray-300 bg-white  sticky top-22 z-50">
 
       <div className="p-5 flex flex-row items-center">
-        <button className="p-2 rounded-md hover:bg-gray-100">
+        <button className="p-2 rounded-md hover:bg-gray-100 hover:cursor-pointer">
           <MenuIcon size={16} />
         </button>
-        <button className="m-2 p-1 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100">
+        <button className="m-2 p-1 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer">
           <Table2 className="text-blue-500" size={16} />
           <div className="text-xs font-semibold">Grid view</div>
           <ChevronDown size={16} />
@@ -582,6 +626,7 @@ export function TableToolBar({
       </div>
 
       <div className="p-2 flex flex-row items-center text-gray-500 gap-3">
+        <Add100KMenu tableId={tableId} />
         <HideFieldsMenu
           columns={columns}
           columnVisibility={columnVisibility}
@@ -594,7 +639,7 @@ export function TableToolBar({
           filterCondition={filterCondition}
           setFilterCondition={setFilterCondition}
         />
-        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100">
+        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer">
           <SquareLibrary size={14} />
           <div className="text-xs ">Group</div>
         </button>
@@ -603,14 +648,14 @@ export function TableToolBar({
           sortConfig={sortConfig}
           setSortConfig={setSortConfig}
         />
-        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100">
+        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer">
           <PaintBucket size={14} />
           <div className="text-xs ">Color</div>
         </button>
-        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100">
+        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer">
           <ListChevronsUpDown size={14} />
         </button>
-        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100">
+        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer">
           <ExternalLink size={14} />
           <div className="text-xs ">Share and sync</div>
         </button>

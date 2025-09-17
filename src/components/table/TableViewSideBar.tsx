@@ -32,7 +32,7 @@ export function TableViewSideBar({
     <div className="h-full w-70 bg-white border-r border-gray-300 overflow-hidden fixed left-14 top-34">
       <div className="sticky top-0 p-4 h-100 flex flex-col gap-4">
         <button 
-          className="px-2 py-1.5 flex flex-row items-center text-xs gap-2 rounded-sm hover:bg-gray-100 focus:ring-0 focus:outline-none"
+          className="px-2 py-1.5 flex flex-row items-center text-xs gap-2 rounded-sm hover:bg-gray-100 hover:cursor-pointer focus:ring-0 focus:outline-none"
           onClick={handleAddView}
         >
           {addViewMutation.isPending ? (
@@ -57,7 +57,7 @@ export function TableViewSideBar({
           {views.map((view) => (
             <button 
               key={view.id}
-              className={`px-2 py-1.5 flex flex-row items-center gap-2 text-start rounded-sm hover:bg-gray-100 ${
+              className={`px-2 py-1.5 flex flex-row items-center gap-2 text-start rounded-sm hover:cursor-pointer hover:bg-gray-100 ${
                 view.id === selectedView?.id ? "bg-gray-100" : "bg-white"
               }
               `}
