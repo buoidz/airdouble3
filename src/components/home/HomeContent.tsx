@@ -4,6 +4,8 @@ import { LoadingPage } from "../LoadingPage";
 import Link from "next/link";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
+import { Menu, MenuButton, MenuItem, MenuItems, MenuSeparator } from '@headlessui/react'
+import { Ellipsis, Pencil, Trash2 } from "lucide-react";
 
 dayjs.extend(relativeTime);
 
@@ -31,6 +33,18 @@ export function getRainbowColorFromId(id: string): string {
 export function HomeContent()  {
   const {data: bases, isLoading} = api.base.getAllBases.useQuery();
 
+  const utils = api.useUtils();
+  const deleteBaseMutation = api.base.deleteBase.useMutation({
+    onSuccess: () => {
+      void utils.base.getAllBases.invalidate();
+    },
+  });
+
+  const handleDeleteBase = (baseId: string) => {
+    deleteBaseMutation.mutate({ baseId });
+  };
+
+
   if (isLoading) {
     return <LoadingPage />;
   }
@@ -52,21 +66,47 @@ export function HomeContent()  {
       <div className="mx-10 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4 mb-4">
         {bases.map((base) => (
           <>
-            <Link
-              href={`/${base.id}`}  
-              key={base.id}
-              className="h-25 w-full border border-gray-200 bg-white rounded-xl shadow-xs flex flex-row items-center"
-            >
-              <div 
-                className="w-14 h-14 mx-4 rounded-xl border border-gray-300 text-white text-2xl flex items-center justify-center" 
-                style={{ backgroundColor: getRainbowColorFromId(base.id) }}>
-                {base.name.slice(0,2)}
-              </div>
-              <div className="mx-1 flex flex-col gap-1">
-                <div className="text sm font-semibold">{base.name}</div>
-                <div className="text-xs text-gray-600">Opened {dayjs(base.updatedAt).fromNow()}</div>
-              </div>
-            </Link>
+            <div key={base.id} className="relative group h-25 w-full flex flex-col">
+              <Link
+                href={`/${base.id}`}  
+                key={base.id}
+                className="h-25 w-full border border-gray-200 bg-white rounded-xl shadow-xs flex flex-row items-center"
+              >
+                <div 
+                  className="w-14 h-14 mx-4 rounded-xl border border-gray-300 text-white text-2xl flex items-center justify-center" 
+                  style={{ backgroundColor: getRainbowColorFromId(base.id) }}>
+                  {base.name.slice(0,2)}
+                </div>
+                <div className="mx-1 flex flex-col gap-1">
+                  <div className="text sm font-semibold">{base.name}</div>
+                  <div className="text-xs text-gray-600">Opened {dayjs(base.updatedAt).fromNow()}</div>
+                </div>
+              </Link>
+              <Menu>
+                <MenuButton className="absolute top-4 right-4 2 p-2 opacity-100 border border-gray-200 shadow-xs rounded-md group-hover:opacity-100 transition-opacity">
+                  <Ellipsis size={14} />
+                </MenuButton>
+                <MenuItems anchor="bottom start" className="z-10 [--anchor-gap:4px] w-60 bg-white border border-gray-300 rounded shadow-md p-2 flex flex-col items-start">
+                  {/* <MenuItem>
+                    <button
+                      className="text-start text-sm w-full px-4 py-2 rounded-sm hover:bg-gray-100 flex flex-row items-center gap-3"
+                    >
+                      <Pencil size={14} />
+                      Rename
+                    </button>
+                  </MenuItem> */}
+                  <MenuItem>
+                    <button
+                      className="text-start text-sm w-full px-4 py-2 rounded-sm hover:bg-gray-100 flex flex-row items-center gap-3"
+                      onClick={() => handleDeleteBase(base.id)}
+                    >
+                      <Trash2 size={14} />
+                      Delete
+                    </button>
+                  </MenuItem>
+                </MenuItems>
+              </Menu>
+            </div>
           </>
         ))}
       </div>

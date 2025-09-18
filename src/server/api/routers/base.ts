@@ -89,6 +89,33 @@ export const baseRouter = createTRPCRouter({
       return base;
     }),
 
+  deleteBase: publicProcedure
+    .input(z.object({ baseId: z.string()}))
+    .mutation(async ({ ctx, input }) => {
+      const currentUser = ctx.currentUser;
+      if (!currentUser) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: "You must be logged in to rename a base.",
+        });
+      }
+      
+      const base = await ctx.db.base.findUnique({
+        where: { id: input.baseId },
+      });
+
+      if (!base || base.ownerId != currentUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to rename this base.",
+        });
+      }
+
+      await ctx.db.base.delete({
+        where: { id: input.baseId },
+      });
+    }),
+
   renameBase: publicProcedure
     .input(z.object({ id: z.string(), name: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
