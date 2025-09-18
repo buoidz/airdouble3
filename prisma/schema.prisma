@@ -111,6 +111,7 @@ model Cell {
     @@unique([columnId, rowId])
     @@index([columnId, textValue])
     @@index([columnId, numberValue])
+    @@index([rowId])
 }
 
 model View {

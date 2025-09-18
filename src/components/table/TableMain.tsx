@@ -53,7 +53,6 @@ export function TableMain({baseId}: {baseId: string}) {
   });
 
   const applyViewToState = (view: View) => {
-    console.log("Applying view")
     setIsViewReady(false);
     setSelectedView(view);
     setFilterConfig(Array.isArray(view.filterConfig) ? view.filterConfig as unknown as FilterConfig[] : []);
@@ -66,7 +65,6 @@ export function TableMain({baseId}: {baseId: string}) {
     );
 
     setTimeout(() => setIsViewReady(true), 1000);
-    console.log("Done applying view")
   };
 
 

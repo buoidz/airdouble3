@@ -1,6 +1,6 @@
 import { api, type RouterOutputs } from "~/utils/api";
 import { LoadingPage, LoadingSpinner } from "../LoadingPage";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { flexRender, getCoreRowModel, useReactTable, type CellContext, type VisibilityState } from "@tanstack/react-table";
 import { Baseline, Hash, Plus } from "lucide-react";
@@ -25,57 +25,138 @@ type EditableCellProps = {
   columnId: string; 
   rowIndex: number; 
   columnType: ColumnType;
+  isCurrent: boolean;
+  isEditCell: boolean
+  setIsEditCell: (isEditCell: boolean) => void;
 }
 
-function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType }: EditableCellProps) {
+function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType, isCurrent, isEditCell, setIsEditCell }: EditableCellProps) {
   const [value , setValue] = useState(initialValue);
+  const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const divRef = useRef<HTMLDivElement>(null);
+
 
   const updateCellMutation = api.table.updateCell.useMutation();
 
-  const handleBlur = () => {
+  // const handleBlur = () => {
+  //   if (value !== initialValue) {
+  //     updateCellMutation.mutate({ tableId, rowIndex, columnId, value});
+  //   }
+  // };
+
+  // const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const newValue = e.target.value;
+  //   if (columnType === ColumnType.NUMBER) {
+  //     if (newValue === "" || !isNaN(Number(newValue))) {
+  //       setError(null);
+  //       setValue(newValue);
+  //     } else {
+  //       setError("Please enter a valid number");
+  //     }
+  //   } else {
+  //     setValue(newValue);
+  //   }
+  // }
+  const commitChange = () => {
+    // setEditing(false);
     if (value !== initialValue) {
-      updateCellMutation.mutate({ tableId, rowIndex, columnId, value});
+      updateCellMutation.mutate({ tableId, rowIndex, columnId, value });
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    if (columnType === ColumnType.NUMBER) {
-      if (newValue === "" || !isNaN(Number(newValue))) {
-        setError(null);
-        setValue(newValue);
-      } else {
-        setError("Please enter a valid number");
-      }
-    } else {
-      setValue(newValue);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === "Escape") {
+      commitChange();
+      setIsEditCell(false);
+      setEditing(false);
+      divRef.current?.focus();
+    } else if (e.key === "Tab") {
+      // prevent default tab navigation while editing
+      e.preventDefault();
     }
-  }
+  };
 
   useEffect(() => {
-    if (error) {
-      const timer = setTimeout(() => setError(null), 3000); // 3 seconds
-      return () => clearTimeout(timer);
+    if (isCurrent && !editing) {
+      divRef.current?.focus();
     }
-  }, [error]);
+  }, [isCurrent, editing]);
+
 
   return (
-    <div className="relative">
-
-      <input
-        className="w-full border-none bg-transparent focus:outline-none"
-        value={value}
-        onChange={handleChange}
-        onBlur={handleBlur}
-      />
-      {error && (
-        <div className="p-1 border border-gray-300 bg-white rounded absolute bottom-full left-0 text-xs text-red-500 mt-1">
-          {error}
+    <div className="w-full h-full overflow-hidden">
+      {!editing ? (
+        <div
+          ref={divRef}
+          tabIndex={0}
+          className="w-full h-full flex items-center focus:outline-none cursor-pointer"
+          onDoubleClick={() => {
+            setIsEditCell(true);
+            setEditing(true)
+          }}
+          onKeyDown={(e) => {
+            if (e.key.length === 1 || e.key === "Enter" || e.key === "F2") {
+              e.stopPropagation();
+              setIsEditCell(true);
+              setEditing(true)
+              if (e.key.length === 1) {
+                setValue("");
+              }
+            }
+          }}
+        >
+          <span className="truncate block w-full">{value}</span>
         </div>
+      ):(
+        <input
+          autoFocus
+          className="w-full h-full border-none bg-transparent focus:outline-none"
+          value={value}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            if (columnType === ColumnType.NUMBER) {
+              if (newValue === "" || !isNaN(Number(newValue))) {
+                setError(null);
+                setValue(newValue);
+              } else {
+                setError("Please enter a valid number");
+              }
+            } else {
+              setValue(newValue);
+            }
+          }}
+          onBlur={commitChange}
+          onKeyDown={handleKeyDown}
+        />
       )}
     </div>
   );
+
+  // useEffect(() => {
+  //   if (error) {
+  //     const timer = setTimeout(() => setError(null), 3000); // 3 seconds
+  //     return () => clearTimeout(timer);
+  //   }
+  // }, [error]);
+
+  // return (
+  //   <div className="relative">
+
+  //     <input
+  //       className="w-full border-none bg-transparent focus:outline-none"
+  //       value={value}
+  //       onChange={handleChange}
+  //       onBlur={handleBlur}
+  //     />
+  //     {error && (
+  //       <div className="p-1 border border-gray-300 bg-white rounded absolute bottom-full left-0 text-xs text-red-500 mt-1">
+  //         {error}
+  //       </div>
+  //     )}
+  //   </div>
+  // );
 }
 
 function AddColumnMenu({tableId}: {tableId: string}) {
@@ -232,6 +313,13 @@ export function TableContent({
 }: TableContentProps) {
   const utils = api.useUtils();
 
+  const [currentCell, setCurrentCell] = useState<{ row: number; col: number }>({
+    row: 0,
+    col: 0,
+  });
+  const [isEditCell, setIsEditCell] = useState(false);
+
+
   const {data: colData, isLoading: colLoading} = api.table.getColumnDataByTableId.useQuery({id: tableId});
   const {
     data, 
@@ -261,7 +349,7 @@ export function TableContent({
 
   const columns = useMemo(
     () => 
-        colData?.map((col) => ({
+        colData?.map((col, colIndex) => ({
           accessorKey: col.id,
           header: col.name,
           enableResizing: true,
@@ -270,16 +358,20 @@ export function TableContent({
           maxSize: 500,
           cell: (props: CellContext<RowData, unknown>) => {
             const cellValue = props.getValue() as CellValue | undefined;
+
             return <EditableCell
               initialValue={cellValue?.value ?? ""}
               tableId={tableId}
               rowIndex={props.row.index}
               columnId={col.id}
               columnType={col.type}
+              isCurrent={currentCell?.row === props.row.index && currentCell?.col === colIndex}
+              isEditCell={isEditCell}
+              setIsEditCell={setIsEditCell}
             />;
           },      
       })) ?? [], 
-    [colData, tableId]
+    [colData, tableId, currentCell?.row, currentCell?.col]
   );
 
   const rows = useMemo(
@@ -348,8 +440,6 @@ export function TableContent({
 
   useEffect(() => {
     const [lastItem] = [...virtualizer.getVirtualItems()].reverse();
-    console.log("Last virtual item:", lastItem);
-    console.log(rows.length)
     
     if (
       lastItem &&
@@ -359,7 +449,6 @@ export function TableContent({
       rows.length > 0
     ) {
       void fetchNextPage();
-      console.log("fetchNextPage")
     }
   }, [virtualizer.getVirtualItems(), rows.length, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
@@ -406,6 +495,64 @@ export function TableContent({
     return rowData?.some((row: RowDataRaw) =>
       row.cells.some(cell => cell.columnId === columnId && cell.containSearchTerm)
     );
+  };
+
+  const handleCellNavigation = (e: React.KeyboardEvent, currentCell: {row: number; col: number}) => {
+    const { row, col } = currentCell;
+    const maxCols = table.getVisibleLeafColumns().length - 1;
+    const maxRows = rows.length - 1;
+    if(isEditCell) return;
+    switch (e.key) {
+      case "ArrowRight":
+        e.preventDefault();
+        if (col < maxCols) {
+          setCurrentCell({ row, col: col + 1 });
+        } else if (row < maxRows) {
+          setCurrentCell({ row: row + 1, col: 0 });
+        }
+        break;
+
+      case "ArrowLeft":
+        e.preventDefault();
+        if (col > 0) {
+          setCurrentCell({ row, col: col - 1 });
+        } else if (row > 0) {
+          setCurrentCell({ row: row - 1, col: maxCols });
+        }
+        break;
+
+      case "ArrowDown":
+        e.preventDefault();
+        if (row < maxRows) {
+          setCurrentCell({ row: row + 1, col });
+        }
+        break;
+
+      case "ArrowUp":
+        e.preventDefault();
+        if (row > 0) {
+          setCurrentCell({ row: row - 1, col });
+        }
+        break;
+
+      case "Tab":
+        e.preventDefault();
+        if (!e.shiftKey) {
+          if (col < maxCols) {
+            setCurrentCell({ row, col: col + 1 });
+          } else if (row < maxRows) {
+            setCurrentCell({ row: row + 1, col: 0 });
+          }
+        } else {
+          if (col > 0) {
+            setCurrentCell({ row, col: col - 1 });
+          } else if (row > 0) {
+            setCurrentCell({ row: row - 1, col: maxCols });
+          }
+        }
+        break;
+        
+    }
   };
 
 
@@ -489,11 +636,14 @@ export function TableContent({
                   >
                     {virtualRow.index + 1}
                   </th>
-                  {row.getVisibleCells().map(cell => {
+                  {row.getVisibleCells().map((cell, colIndex) => {
                     const isHighlightedFilter = isColumnHighlightedFilter(cell.column.id)
                     const isHighlightedSort = isColumnHighlightedSort(cell.column.id);
                     const cellData = cell.getValue() as CellValue | undefined;
                     const isHighlightedSearch = cellData?.containSearchTerm ?? false;
+
+                    const isCurrent = currentCell?.row === virtualRow.index && currentCell?.col === colIndex;
+
 
 
                     const getBgColor = () => {
@@ -505,8 +655,22 @@ export function TableContent({
                     return (
                       <td 
                         key={cell.id} 
-                        className={`border-r border-b border-gray-300 px-4 text-sm text-gray-800 ${getBgColor()}`}
-                        style={{ width: cell.column.getSize(), height: `${virtualRow.size}px`, }}
+                        tabIndex={0}
+                        onClick={() => setCurrentCell({ row: virtualRow.index, col: colIndex })}
+                        onFocus={() => setCurrentCell({ row: virtualRow.index, col: colIndex })}
+                        onKeyDown={(e) => {
+                          if (!currentCell) return;
+                          handleCellNavigation(e, currentCell);
+                        }}
+                        className={`border-r border-b border-gray-300 px-4 text-sm text-gray-800 ${getBgColor()} ${
+                          isCurrent ? "outline-1 outline-blue-500" : ""
+                        }`}
+                        style={{ 
+                          width: cell.column.getSize(), 
+                          height: `${virtualRow.size-1}px`,   
+                          maxWidth: cell.column.getSize(),
+                          minWidth: cell.column.getSize()
+                        }}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
