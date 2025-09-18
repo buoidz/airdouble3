@@ -4,8 +4,8 @@ import { LoadingPage } from "../LoadingPage";
 import Link from "next/link";
 import dayjs from "dayjs";
 import relativeTime from "dayjs/plugin/relativeTime";
-import { Menu, MenuButton, MenuItem, MenuItems, MenuSeparator } from '@headlessui/react'
-import { Ellipsis, Pencil, Trash2 } from "lucide-react";
+import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
+import { Ellipsis, Trash2 } from "lucide-react";
 
 dayjs.extend(relativeTime);
 
@@ -83,10 +83,10 @@ export function HomeContent()  {
                 </div>
               </Link>
               <Menu>
-                <MenuButton className="absolute top-4 right-4 2 p-2 opacity-100 border border-gray-200 shadow-xs rounded-md group-hover:opacity-100 transition-opacity">
+                <MenuButton className="absolute top-4 right-4 2 p-2 opacity-100 border border-gray-200 shadow-xs rounded-md group-hover:opacity-100 transition-opacity focus:ring-0 focus:outline-none">
                   <Ellipsis size={14} />
                 </MenuButton>
-                <MenuItems anchor="bottom start" className="z-10 [--anchor-gap:4px] w-60 bg-white border border-gray-300 rounded shadow-md p-2 flex flex-col items-start">
+                <MenuItems anchor="bottom start" className="z-10 [--anchor-gap:4px] w-60 bg-white border border-gray-300 rounded shadow-md p-2 flex flex-col items-start focus:ring-0 focus:outline-none">
                   {/* <MenuItem>
                     <button
                       className="text-start text-sm w-full px-4 py-2 rounded-sm hover:bg-gray-100 flex flex-row items-center gap-3"

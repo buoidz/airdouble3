@@ -1,4 +1,4 @@
-import { api, type RouterOutputs } from "~/utils/api";
+import { api } from "~/utils/api";
 import { LoadingPage, LoadingSpinner } from "../LoadingPage";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from '@tanstack/react-virtual'
@@ -26,11 +26,10 @@ type EditableCellProps = {
   rowIndex: number; 
   columnType: ColumnType;
   isCurrent: boolean;
-  isEditCell: boolean
   setIsEditCell: (isEditCell: boolean) => void;
 }
 
-function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType, isCurrent, isEditCell, setIsEditCell }: EditableCellProps) {
+function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType, isCurrent, setIsEditCell }: EditableCellProps) {
   const [value , setValue] = useState(initialValue);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -110,26 +109,33 @@ function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType, i
           <span className="truncate block w-full">{value}</span>
         </div>
       ):(
-        <input
-          autoFocus
-          className="w-full h-full border-none bg-transparent focus:outline-none"
-          value={value}
-          onChange={(e) => {
-            const newValue = e.target.value;
-            if (columnType === ColumnType.NUMBER) {
-              if (newValue === "" || !isNaN(Number(newValue))) {
-                setError(null);
-                setValue(newValue);
+        <>
+          <input
+            autoFocus
+            className="w-full h-full border-none bg-transparent focus:outline-none"
+            value={value}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              if (columnType === ColumnType.NUMBER) {
+                if (newValue === "" || !isNaN(Number(newValue))) {
+                  setError(null);
+                  setValue(newValue);
+                } else {
+                  setError("Please enter a valid number");
+                }
               } else {
-                setError("Please enter a valid number");
+                setValue(newValue);
               }
-            } else {
-              setValue(newValue);
-            }
-          }}
-          onBlur={commitChange}
-          onKeyDown={handleKeyDown}
-        />
+            }}
+            onBlur={commitChange}
+            onKeyDown={handleKeyDown}
+          />
+          {error && (
+            <div className="p-1 border border-gray-300 bg-white rounded absolute bottom-full left-0 text-xs text-red-500 mt-1">
+              {error}
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -366,7 +372,6 @@ export function TableContent({
               columnId={col.id}
               columnType={col.type}
               isCurrent={currentCell?.row === props.row.index && currentCell?.col === colIndex}
-              isEditCell={isEditCell}
               setIsEditCell={setIsEditCell}
             />;
           },      
