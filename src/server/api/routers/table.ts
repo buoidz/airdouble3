@@ -638,6 +638,7 @@ export const tableRouter = createTRPCRouter({
         groupByClauses.push(`${alias}."${colField}"`);
       });
 
+      orderByClauses.push(`r.order`);
       const orderBySQL = orderByClauses.length > 0 ? `ORDER BY ${orderByClauses.join(", ")}` : "";
       const groupBySQL = `GROUP BY ${groupByClauses.join(", ")}`;
 

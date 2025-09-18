@@ -96,7 +96,7 @@ export const baseRouter = createTRPCRouter({
       if (!currentUser) {
         throw new TRPCError({
           code: "UNAUTHORIZED",
-          message: "You must be logged in to rename a base.",
+          message: "You must be logged in to delete a base.",
         });
       }
       
@@ -107,7 +107,7 @@ export const baseRouter = createTRPCRouter({
       if (!base || base.ownerId != currentUser.id) {
         throw new TRPCError({
           code: "FORBIDDEN",
-          message: "You do not have permission to rename this base.",
+          message: "You do not have permission to delete this base.",
         });
       }
 

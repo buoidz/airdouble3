@@ -30,36 +30,20 @@ type EditableCellProps = {
 }
 
 function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType, isCurrent, setIsEditCell }: EditableCellProps) {
+  const utils = api.useUtils();
   const [value , setValue] = useState(initialValue);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const divRef = useRef<HTMLDivElement>(null);
 
+  const updateCellMutation = api.table.updateCell.useMutation({
+    onSuccess: () => {
+      void utils.table.getRowDataByOperations.invalidate();
+    },
+  });
 
-  const updateCellMutation = api.table.updateCell.useMutation();
-
-  // const handleBlur = () => {
-  //   if (value !== initialValue) {
-  //     updateCellMutation.mutate({ tableId, rowIndex, columnId, value});
-  //   }
-  // };
-
-  // const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const newValue = e.target.value;
-  //   if (columnType === ColumnType.NUMBER) {
-  //     if (newValue === "" || !isNaN(Number(newValue))) {
-  //       setError(null);
-  //       setValue(newValue);
-  //     } else {
-  //       setError("Please enter a valid number");
-  //     }
-  //   } else {
-  //     setValue(newValue);
-  //   }
-  // }
   const commitChange = () => {
-    // setEditing(false);
     if (value !== initialValue) {
       updateCellMutation.mutate({ tableId, rowIndex, columnId, value });
     }
@@ -72,7 +56,6 @@ function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType, i
       setEditing(false);
       divRef.current?.focus();
     } else if (e.key === "Tab") {
-      // prevent default tab navigation while editing
       e.preventDefault();
     }
   };
@@ -83,9 +66,21 @@ function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType, i
     }
   }, [isCurrent, editing]);
 
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => setError(null), 3000); // 3 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
 
   return (
     <div className="w-full h-full overflow-hidden">
+      {error && (
+        <div className="p-1 z-200 border border-gray-300 bg-white rounded absolute bottom-full text-xs text-red-500 mt-1">
+          {error}
+        </div>
+      )}
       {!editing ? (
         <div
           ref={divRef}
@@ -130,39 +125,10 @@ function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType, i
             onBlur={commitChange}
             onKeyDown={handleKeyDown}
           />
-          {error && (
-            <div className="p-1 border border-gray-300 bg-white rounded absolute bottom-full left-0 text-xs text-red-500 mt-1">
-              {error}
-            </div>
-          )}
         </>
       )}
     </div>
   );
-
-  // useEffect(() => {
-  //   if (error) {
-  //     const timer = setTimeout(() => setError(null), 3000); // 3 seconds
-  //     return () => clearTimeout(timer);
-  //   }
-  // }, [error]);
-
-  // return (
-  //   <div className="relative">
-
-  //     <input
-  //       className="w-full border-none bg-transparent focus:outline-none"
-  //       value={value}
-  //       onChange={handleChange}
-  //       onBlur={handleBlur}
-  //     />
-  //     {error && (
-  //       <div className="p-1 border border-gray-300 bg-white rounded absolute bottom-full left-0 text-xs text-red-500 mt-1">
-  //         {error}
-  //       </div>
-  //     )}
-  //   </div>
-  // );
 }
 
 function AddColumnMenu({tableId}: {tableId: string}) {
@@ -199,7 +165,7 @@ function AddColumnMenu({tableId}: {tableId: string}) {
 
   return (
     <Menu>
-      <MenuButton className="px-8 w-full h-full focus:ring-0 focus:outline-none">
+      <MenuButton className="px-8 py-1 w-full h-full focus:ring-0 focus:outline-none">
         {addColumnMutation.isPending ? (<LoadingSpinner size={12}/>):(<Plus size={14}/>)}
         
       </MenuButton>
@@ -364,7 +330,7 @@ export function TableContent({
           maxSize: 500,
           cell: (props: CellContext<RowData, unknown>) => {
             const cellValue = props.getValue() as CellValue | undefined;
-
+            
             return <EditableCell
               initialValue={cellValue?.value ?? ""}
               tableId={tableId}
