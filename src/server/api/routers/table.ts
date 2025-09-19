@@ -454,7 +454,7 @@ export const tableRouter = createTRPCRouter({
 
       await ctx.db.row.createMany({ data: rows });
 
-      const cells: any[] = [];
+      const cells = [];
       for (const row of rows) {
         for (const column of columns) {
           cells.push({
