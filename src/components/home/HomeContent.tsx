@@ -50,24 +50,24 @@ export function HomeContent()  {
     return <LoadingPage />;
   }
 
-  if (!bases || bases.length === 0) {
-    return (
-      <div className="flex-1 bg-gray-50 overflow-y-auto">
-        <h1 className="py-8 px-10 text-3xl font-bold">Home</h1>
-        <div className="mb-2 w-full flex items-center justify-center text-2xl">{"You haven't open anything recently"}</div>
-        <div className="w-full flex items-center justify-center text-sm text-gray-500">Apps that you have recently opened will appear here.</div>
-      </div>
-    )
-  }
+  // if (!bases || bases.length === 0) {
+  //   return (
+  //     <div className="flex-1 bg-gray-50 overflow-y-auto">
+  //       <h1 className="py-8 px-10 text-3xl font-bold">Home</h1>
+  //       <div className="mb-2 w-full flex items-center justify-center text-2xl">{"You haven't open anything recently"}</div>
+  //       <div className="w-full flex items-center justify-center text-sm text-gray-500">Apps that you have recently opened will appear here.</div>
+  //     </div>
+  //   )
+  // }
 
-  const today = bases.filter(base =>
+  const today = bases?.filter(base =>
     dayjs(base.updatedAt).isSame(dayjs(), 'day')
   );
-  const past7Days = bases.filter(base =>
+  const past7Days = bases?.filter(base =>
     !dayjs(base.updatedAt).isSame(dayjs(), 'day') &&
     dayjs(base.updatedAt).isAfter(dayjs().subtract(7, 'day'))
   );
-  const past30Days = bases.filter(base =>
+  const past30Days = bases?.filter(base =>
     !dayjs(base.updatedAt).isSame(dayjs(), 'day') &&
     !dayjs(base.updatedAt).isAfter(dayjs().subtract(7, 'day')) &&
     dayjs(base.updatedAt).isAfter(dayjs().subtract(30, 'day'))
@@ -76,7 +76,7 @@ export function HomeContent()  {
   const renderBases = (basesList: typeof bases) => {
     return (
       <div className="mx-13 flex flex-wrap gap-x-4 gap-y-4 mb-4">
-        {basesList.map((base) => (
+        {basesList?.map((base) => (
           <>
             <div key={base.id} className="relative group w-85 h-25 flex flex-col hover:shadow-md">
               <Link
@@ -178,21 +178,27 @@ export function HomeContent()  {
           </button>
         </div>
       </div>
-      {today.length > 0 && (
+      {(!bases || bases.length === 0) &&    
+        <>
+          <div className="mb-2 w-full flex items-center justify-center text-2xl">{"You haven't open anything recently"}</div>
+          <div className="w-full flex items-center justify-center text-sm text-gray-500">Apps that you have recently opened will appear here.</div>
+        </>     
+      }
+      {today && today.length > 0 && (
         <>
           <h2 className="px-13 pb-1 text-sm text-gray-500 font-semibold mb-2">Today</h2>
           {renderBases(today)}
         </>
       )}
 
-      {past7Days.length > 0 && (
+      {past7Days && past7Days.length > 0 && (
         <>
           <h2 className="px-13 pb-1 text-xl font-semibold mb-2">Past 7 days</h2>
           {renderBases(past7Days)}
         </>
       )}
 
-      {past30Days.length > 0 && (
+      {past30Days && past30Days.length > 0 && (
         <>
           <h2 className="px-13 pb-1 text-xl font-semibold mb-2">Past 30 days</h2>
           {renderBases(past30Days)}
