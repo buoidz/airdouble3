@@ -27,10 +27,41 @@ export interface FilterConfig {
 export function TableMain({baseId}: {baseId: string}) {
   const utils = api.useUtils();
   const {data: tables, isLoading: tablesLoading} = api.base.getAllTablesBaseById.useQuery({id: baseId});
-  const [selectedTableId, setSelectedTableId] = useState<string>(tables?.[0]?.id ?? "");  
+  const [selectedTableId, setSelectedTableId] = useState<string>("");
+
+  useEffect(() => {
+    if (!tables || tables.length === 0 || !tables[0]) return;
+
+    // If there is already a saved tableId in localStorage, use it (if it exists in this base)
+    const saved = typeof window !== "undefined" ? localStorage.getItem(`selectedTableId-${baseId}`) : null;
+    if (saved && tables.find((t) => t.id === saved)) {
+      setSelectedTableId(saved);
+    } else {
+      // Default to first table in this base
+      setSelectedTableId(tables[0].id);
+    }
+  }, [tables, baseId]);
 
   const {data: views, isLoading: viewsLoading} = api.view.getAllViewByTableId.useQuery({tableId: selectedTableId});
-  const [selectedView, setSelectedView] = useState<View | null>(null);
+  const [selectedView, setSelectedView] = useState<View | null>(() => {
+    if (typeof window !== "undefined") {
+      const view = localStorage.getItem(`selectedView-${baseId}`);
+      return view ? JSON.parse(view) as View : null;
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (selectedTableId) {
+      localStorage.setItem(`selectedTableId-${baseId}`, selectedTableId);
+    }
+  }, [selectedTableId, baseId]);
+
+  useEffect(() => {
+    if (selectedView) {
+      localStorage.setItem(`selectedView-${baseId}`, JSON.stringify(selectedView));
+    }
+  }, [selectedView, baseId]);
 
 
   const [filterConfig, setFilterConfig] = useState<FilterConfig[]>([]);
@@ -42,6 +73,22 @@ export function TableMain({baseId}: {baseId: string}) {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
   const [isViewReady, setIsViewReady] = useState(false);
+
+  useEffect(() => {
+    if (selectedTableId) {
+      // Reset all table-specific states
+      setSelectedView(null);
+      setFilterConfig([]);
+      setFilterCondition("AND");
+      setSortConfig([]);
+      setSearchTerm("");
+      setNumFieldsContainSearchTerm(0);
+      setNumCellsContainSearchTerm(0);
+      setIsViewReady(false);
+    }
+  }, [selectedTableId]);
+
+
   const saveViewMutation = api.view.saveView.useMutation({
     onSuccess: () => {
       setIsViewReady(true);

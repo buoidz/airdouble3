@@ -68,10 +68,14 @@ export const tableRouter = createTRPCRouter({
               
       // 3. Create three empty rows in the first table with empty cells for each column
       const createedColumn = await ctx.db.column.findMany({where: {tableId: table.id}});
+      const lastRowId = await ctx.db.row.findFirst({
+        orderBy: { id: "desc" },
+      });
+      const startId = lastRowId ? lastRowId.id + 1 : 0;
 
       for (let i = 0; i < 3; i++) {
         const row = await ctx.db.row.create({
-          data: { tableId: table.id, order:  i },
+          data: { tableId: table.id, order: i, id: startId+i },
         });
 
         await ctx.db.cell.createMany({
@@ -240,7 +244,7 @@ export const tableRouter = createTRPCRouter({
     }),
 
   updateCell: publicProcedure
-    .input(z.object({ tableId: z.string(), rowIndex: z.number(), columnId: z.string(), value: z.string() }))
+    .input(z.object({ tableId: z.string(), rowId: z.string(), columnId: z.string(), value: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const currentUser = ctx.currentUser;
       if (!currentUser) {
@@ -269,7 +273,7 @@ export const tableRouter = createTRPCRouter({
       }
 
       const row = await ctx.db.row.findFirst({
-        where: { tableId: input.tableId, order: input.rowIndex },  
+        where: { tableId: input.tableId, id: Number(input.rowId) },  
         include: { cells: true },    
       });
 
@@ -359,14 +363,19 @@ export const tableRouter = createTRPCRouter({
         })
       }
 
+      const lastRowId = await ctx.db.row.findFirst({
+        orderBy: { id: "desc" },
+      });
+      const startId = lastRowId ? lastRowId.id + 1 : 0;
+
       const oldRows = await ctx.db.row.findFirst({
         where: { tableId: input.tableId },
         orderBy: { order: "desc" }
       })
-      
       const newOrder = oldRows ? oldRows.order + 1 : 0;
+
       const newRow = await ctx.db.row.create({
-        data: { tableId: input.tableId, order: newOrder }
+        data: { tableId: input.tableId, order: newOrder,id: startId }
       })
 
       await ctx.db.cell.createMany({
@@ -379,7 +388,7 @@ export const tableRouter = createTRPCRouter({
       });
     }),
 
-  add1000Rows: publicProcedure
+  add10KRows: publicProcedure
     .input(z.object({
       tableId: z.string(),
     }))
@@ -419,46 +428,80 @@ export const tableRouter = createTRPCRouter({
         })
       }
 
-      const oldRows = await ctx.db.row.findFirst({
-        where: { tableId: input.tableId },
-        orderBy: { order: "desc" }
-      })
+    const lastRowId = await ctx.db.row.findFirst({
+      orderBy: { id: "desc" },
+    });
+    const startId = lastRowId ? lastRowId.id + 1 : 0;
+
+
+    const lastRowOrder = await ctx.db.row.findFirst({
+      where: { tableId: input.tableId },
+      orderBy: { id: "desc" },
+    });
+    const startOrder = lastRowOrder ? lastRowOrder.order + 1 : 0;
+
+    const totalRows = 10000;
+    const rowBatchSize = 1000; // insert 10k rows at a time
+
+    for (let offset = 0; offset < totalRows; offset += rowBatchSize) {
+      const batchSize = Math.min(rowBatchSize, totalRows - offset);
+
+      const rows = Array.from({ length: batchSize }, (_, i) => ({
+        id: startId + offset + i,
+        tableId: input.tableId,
+        order: startOrder + offset + i,
+      }));
+
+      await ctx.db.row.createMany({ data: rows });
+
+      const cells: any[] = [];
+      for (const row of rows) {
+        for (const column of columns) {
+          cells.push({
+            rowId: row.id,
+            columnId: column.id,
+            textValue: column.type === ColumnType.TEXT ? faker.lorem.words({min: 1, max: 3}) : null,
+            numberValue: column.type === ColumnType.NUMBER ? faker.number.int({ max: 1000000000000}) : null,
+          });
+        }
+      }
+
+      await ctx.db.cell.createMany({ data: cells });
+    }
       
-      const currentOrder = oldRows ? oldRows.order + 1 : 0;
-      const batchSize = 1000;
+      // const currentOrder = oldRows ? oldRows.order + 1 : 0;
+      // const batchSize = 1000;
 
-      await ctx.db.$transaction(async () => {
-        const dataRows = Array.from({ length: batchSize}, (_, index) => ({
-          tableId: input.tableId,
-          order: currentOrder + index,
-        }));
+      // const dataRows = Array.from({ length: batchSize}, (_, index) => ({
+      //   tableId: input.tableId,
+      //   order: currentOrder + index,
+      // }));
 
-        await ctx.db.row.createMany({
-          data: dataRows
-        })
+      // await ctx.db.row.createMany({
+      //   data: dataRows
+      // })
 
-        const insertedRows = await ctx.db.row.findMany({
-          where: {
-            tableId: input.tableId,
-            order: {
-              gte: currentOrder,
-              lt: currentOrder + batchSize,
-            },
-          },
-          orderBy: { order: "asc" },
-        });
+      // const insertedRows = await ctx.db.row.findMany({
+      //   where: {
+      //     tableId: input.tableId,
+      //     order: {
+      //       gte: currentOrder,
+      //       lt: currentOrder + batchSize,
+      //     },
+      //   },
+      //   orderBy: { order: "asc" },
+      // });
 
-        await ctx.db.cell.createMany({
-          data: columns.flatMap((column) => (
-            insertedRows.map((row) => ({
-              rowId: row.id,
-              columnId: column.id,
-              textValue: column.type === ColumnType.TEXT ? faker.lorem.words({min: 1, max: 3}) : null,
-              numberValue: column.type === ColumnType.NUMBER ? faker.number.int({ max: 1000000000000}) : null,
-            }))
-          )),
-        });
-      });
+      // await ctx.db.cell.createMany({
+      //   data: columns.flatMap((column) => (
+      //     insertedRows.map((row) => ({
+      //       rowId: row.id,
+      //       columnId: column.id,
+      //       textValue: column.type === ColumnType.TEXT ? faker.lorem.words({min: 1, max: 3}) : null,
+      //       numberValue: column.type === ColumnType.NUMBER ? faker.number.int({ max: 1000000000000}) : null,
+      //     }))
+      //   )),
+      // });
     }),
 
 
@@ -526,7 +569,7 @@ export const tableRouter = createTRPCRouter({
       filterCondition: z.string(),
       sorts: z.array(sortSchema).default([]),
       search: z.string().optional(),
-      limit: z.number().min(1).max(1000).default(500),
+      limit: z.number().min(1).max(500000).default(500000),
       cursor: z.number().nullish(),
     }))
     .query(async ({ ctx, input }) => {

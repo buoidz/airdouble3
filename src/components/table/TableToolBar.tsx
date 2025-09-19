@@ -20,29 +20,28 @@ type ColumnObj = {
 
 function Add100KMenu({tableId}: {tableId: string}) {
   const utils = api.useUtils();
-  const addRowsMutation = api.table.add1000Rows.useMutation(); // smaller mutation
+  const addRowsMutation = api.table.add10KRows.useMutation(); // smaller mutation
   const [isRunning, setIsRunning] = useState(false);
-  const [progress, setProgress] = useState(0);
+  // const [progress, setProgress] = useState(0);
 
   const handleAddRows = async () => {
     setIsRunning(true);
-    setProgress(0);
+    // setProgress(0);
+    await addRowsMutation.mutateAsync({ tableId });
 
-    for (let i = 0; i < 100; i++) {
-      try {
-        await addRowsMutation.mutateAsync({ tableId });
-        setProgress((prev) => prev + 1);
+    // for (let i = 0; i < 10; i++) {
+    //   try {
+    //     await addRowsMutation.mutateAsync({ tableId });
+    //     setProgress((prev) => prev + 1);
+    //     await utils.table.getRowDataByOperations.invalidate();
 
-        if ((i + 1) % 10 === 0) {
-          await utils.table.getRowDataByOperations.invalidate();
-        }
-      } catch (err) {
-        console.error(`Batch ${i + 1} failed`, err);
-        break;
-      }
-    }
+    //   } catch (err) {
+    //     console.error(`Batch ${i + 1} failed`, err);
+    //     break;
+    //   }
+    // }
 
-    await utils.table.getRowDataByOperations.invalidate(); 
+    void utils.table.getRowDataByOperations.invalidate(); 
     setIsRunning(false);
   };
 
@@ -55,7 +54,9 @@ function Add100KMenu({tableId}: {tableId: string}) {
     >
       {isRunning ?  <LoadingSpinner /> :<ListPlus size={14} />}
       <div className="text-xs">
-        {isRunning ? `Adding... (${progress}%)` : "Add 100K Rows"}
+        {/* {isRunning ? `Adding... (${progress*10}%)` : "Add 100K Rows"} */}
+        {isRunning ? `Adding...` : "Add 100K Rows"}
+
       </div>
     </button>
   )
@@ -147,7 +148,7 @@ function HideFieldsMenu({
           {columnsSearched.map((col) => (
             <button 
               key={col.id} 
-              className="px-2 text-start text-sm rounded-sm flex flex-row items-center gap-6 hover:bg-gray-100 focus:ring-0 focus:outline-none"
+              className="px-2 text-start text-sm rounded-sm flex flex-row items-center gap-6 hover:bg-gray-100 focus:ring-0 focus:outline-none  hover:cursor-pointer"
               onClick={() => toggleColumnVisibility(col.id)}
             >
               <div 
@@ -168,13 +169,13 @@ function HideFieldsMenu({
         </div>
         <div className="flex flex-row gap-2 items-center justify-center">
           <button 
-            className="w-full py-1 rounded-sm bg-gray-100 text-xs text-gray-500 hover:bg-gray-200 hover:text-black focus:ring-0 focus:outline-none"
+            className="w-full py-1 rounded-sm bg-gray-100 text-xs text-gray-500 hover:bg-gray-200 hover:text-black focus:ring-0 focus:outline-none hover:cursor-pointer"
             onClick={toggleHideAll}
           >
             Hide all
           </button>
           <button 
-            className="w-full py-1 rounded-sm bg-gray-100 text-xs text-gray-500 hover:bg-gray-200 hover:text-black focus:ring-0 focus:outline-none"
+            className="w-full py-1 rounded-sm bg-gray-100 text-xs text-gray-500 hover:bg-gray-200 hover:text-black focus:ring-0 focus:outline-none hover:cursor-pointer"
             onClick={toggleShowAll}
           >
             Show all
@@ -309,7 +310,7 @@ function FilterMenu({
               <select
                 value={filter.columnId}
                 onChange={(e) => updateFilter(index, "columnId", e.target.value)}
-                className="text-xs border-l border-t border-b border-gray-200 rounded-l p-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none"
+                className="text-xs border-l border-t border-b border-gray-200 rounded-l p-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none hover:cursor-pointer"
               >
                 <option value="">Select column</option>
                 {columns?.map((col) => (
@@ -321,7 +322,7 @@ function FilterMenu({
               <select
                 value={filter.type}
                 onChange={(e) => updateFilter(index, "type", e.target.value)}
-                className="text-xs border-l border-t border-b border-gray-200 p-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none"
+                className="text-xs border-l border-t border-b border-gray-200 p-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none hover:cursor-pointer"
               >
                 {Object.keys(types).map((key) => (
                     <option key={key} value={key}>{types[key]}</option>
@@ -336,7 +337,7 @@ function FilterMenu({
                 className="text-xs border-l border-t border-b border-gray-200 p-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none"
               />
               <button
-                className="text-xs border border-gray-200 rounded-r p-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none"
+                className="text-xs border border-gray-200 rounded-r p-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none hover:cursor-pointer"
                 onClick={() => removeFilter(index)}
               >
                 <Trash size={12} />
@@ -346,7 +347,7 @@ function FilterMenu({
         })}
         <button
             onClick={addFilter}
-            className="p-2 text-xs text-gray-500  font-semibold hover:text-black mt-2"
+            className="p-2 text-xs text-gray-500  font-semibold hover:text-black mt-2 hover:cursor-pointer"
           >
             + Add condition
         </button>
@@ -406,6 +407,7 @@ function SortMenu({
 
       return newSorts;
     });
+    console.log(field, val);
   };
 
   const removeSort = (index: number) => {
@@ -446,7 +448,7 @@ function SortMenu({
               {columns?.map((col) => (
                 <button 
                   key={col.id}
-                  className="px-2 py-1 w-full text-start text-sm text-black rounded hover:bg-gray-100"
+                  className="px-2 py-1 w-full text-start text-sm text-black rounded hover:bg-gray-100  hover:cursor-pointer"
                   onClick={() => {addSort(col.id, col.type)}}
                 >
                   {col.name}

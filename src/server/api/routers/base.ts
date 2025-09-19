@@ -48,9 +48,14 @@ export const baseRouter = createTRPCRouter({
         // 4. Create three empty rows in the first table with empty cells for each column
         const createdColumn = await ctx.db.column.findMany({where: {tableId: firstTable.id}});
 
+        const lastRowId = await ctx.db.row.findFirst({
+          orderBy: { id: "desc" },
+        });
+        const startId = lastRowId ? lastRowId.id + 1 : 0;
+
         for (let i = 0; i < 3; i++) {
           const row = await ctx.db.row.create({
-            data: { tableId: firstTable.id, order:  i },
+            data: { tableId: firstTable.id, order: i, id: startId+i },
           });
 
           await ctx.db.cell.createMany({

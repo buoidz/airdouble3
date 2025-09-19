@@ -23,13 +23,13 @@ type EditableCellProps = {
   initialValue: string; 
   tableId: string; 
   columnId: string; 
-  rowIndex: number; 
+  rowId: string; 
   columnType: ColumnType;
   isCurrent: boolean;
   setIsEditCell: (isEditCell: boolean) => void;
 }
 
-function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType, isCurrent, setIsEditCell }: EditableCellProps) {
+function EditableCell({ initialValue, tableId, columnId, rowId, columnType, isCurrent, setIsEditCell }: EditableCellProps) {
   const utils = api.useUtils();
   const [value , setValue] = useState(initialValue);
   const [editing, setEditing] = useState(false);
@@ -45,7 +45,7 @@ function EditableCell({ initialValue, tableId, columnId, rowIndex, columnType, i
 
   const commitChange = () => {
     if (value !== initialValue) {
-      updateCellMutation.mutate({ tableId, rowIndex, columnId, value });
+      updateCellMutation.mutate({ tableId, rowId, columnId, value });
     }
   };
 
@@ -165,7 +165,7 @@ function AddColumnMenu({tableId}: {tableId: string}) {
 
   return (
     <Menu>
-      <MenuButton className="px-8 py-1 w-full h-full focus:ring-0 focus:outline-none">
+      <MenuButton className="px-8 py-1 w-full h-full focus:ring-0 focus:outline-none  hover:cursor-pointer">
         {addColumnMutation.isPending ? (<LoadingSpinner size={12}/>):(<Plus size={14}/>)}
         
       </MenuButton>
@@ -334,7 +334,7 @@ export function TableContent({
             return <EditableCell
               initialValue={cellValue?.value ?? ""}
               tableId={tableId}
-              rowIndex={props.row.index}
+              rowId={props.row.id}
               columnId={col.id}
               columnType={col.type}
               isCurrent={currentCell?.row === props.row.index && currentCell?.col === colIndex}
@@ -347,6 +347,7 @@ export function TableContent({
 
   const rows = useMemo(
     () => {
+      console.log("row data changed");
       const fieldsWithSearchTerm = new Set<string>();
       let cellsWithSearchTerm = 0;
 
@@ -408,6 +409,13 @@ export function TableContent({
     estimateSize: () => 34,
     overscan: 20,
   })
+
+  useEffect(() => {
+    console.log('Sort config changed:', sortConfig);
+    console.log('Row data length:', rowData?.length);
+    console.log('Processed rows length:', rows);
+    console.log('Table rows:', table.getRowModel().rows);
+  }, [sortConfig, rowData?.length, rows.length, table.getRowModel().rows.length]);
 
   useEffect(() => {
     const [lastItem] = [...virtualizer.getVirtualItems()].reverse();
@@ -526,6 +534,10 @@ export function TableContent({
     }
   };
 
+const tableRenderKey = useMemo(() => 
+  `${JSON.stringify(sortConfig)}-${JSON.stringify(filterConfig)}-${searchTerm}`, 
+  [sortConfig, filterConfig, searchTerm]
+);
 
   
   if(colLoading || rowLoading){
@@ -540,7 +552,7 @@ export function TableContent({
   return (
     <div className="w-full">
       <div ref={parentRef} className="w-full h-full overflow-y-auto">
-        <table className="border-collapse" style={{ width: 'max-content', height: `${virtualizer.getTotalSize()}px`}}>
+        <table key={tableRenderKey} className="border-collapse" style={{ width: 'max-content', height: `${virtualizer.getTotalSize()}px`}}>
           <thead>
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}> 
@@ -657,7 +669,7 @@ export function TableContent({
                 colSpan={1+table.getVisibleLeafColumns().length}
               >
                 <button 
-                  className="py-3 pl-8 w-full h-full focus:ring-0 focus:outline-none"
+                  className="py-3 pl-8 w-full h-full focus:ring-0 focus:outline-none hover:cursor-pointer"
                   onClick={handleAddRowMutation}
                   disabled={addRowMutation.isPending}
                 >
