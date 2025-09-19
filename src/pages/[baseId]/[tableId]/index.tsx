@@ -15,7 +15,7 @@ export default function TablePage() {
     return (
       <>
         <Head>
-          <title>Airdouble</title>
+          <title>Airtable</title>
           <link rel="icon" href="/airtable.png" />
         </Head>
         <main className="min-h-screen flex flex-row">

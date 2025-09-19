@@ -20,7 +20,7 @@ type ColumnObj = {
 
 function Add100KMenu({tableId}: {tableId: string}) {
   const utils = api.useUtils();
-  const addRowsMutation = api.table.add10KRows.useMutation(); // smaller mutation
+  const addRowsMutation = api.table.add100KRows.useMutation(); // smaller mutation
   const [isRunning, setIsRunning] = useState(false);
   // const [progress, setProgress] = useState(0);
 
@@ -407,7 +407,6 @@ function SortMenu({
 
       return newSorts;
     });
-    console.log(field, val);
   };
 
   const removeSort = (index: number) => {

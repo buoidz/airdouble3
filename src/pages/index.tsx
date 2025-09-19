@@ -20,7 +20,7 @@ const Home = () => {
   return (
     <>
       <Head>
-        <title>Airdouble</title>
+        <title>Airtable</title>
         <link rel="icon" href="/airtable.png" />
       </Head>
       <main>
@@ -45,7 +45,7 @@ const Home = () => {
                     height={40}
                   />
                 </Link>
-                <div className="ml-2 font-bold text-2xl">Airdouble</div>  
+                <div className="ml-2 font-bold text-2xl">Airtable</div>  
                 <div className="ml-6 font-semibold text-md">Platform</div>
                 <ChevronRight className="ml-1 text-gray-400" size={15} strokeWidth={3}/>    
                 <div className="ml-4 font-semibold text-md">Solutions</div>

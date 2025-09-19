@@ -388,7 +388,7 @@ export const tableRouter = createTRPCRouter({
       });
     }),
 
-  add10KRows: publicProcedure
+  add100KRows: publicProcedure
     .input(z.object({
       tableId: z.string(),
     }))
@@ -440,7 +440,7 @@ export const tableRouter = createTRPCRouter({
     });
     const startOrder = lastRowOrder ? lastRowOrder.order + 1 : 0;
 
-    const totalRows = 10000;
+    const totalRows = 100000;
     const rowBatchSize = 1000; // insert 10k rows at a time
 
     for (let offset = 0; offset < totalRows; offset += rowBatchSize) {

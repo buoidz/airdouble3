@@ -285,11 +285,25 @@ export function TableContent({
 }: TableContentProps) {
   const utils = api.useUtils();
 
-  const [currentCell, setCurrentCell] = useState<{ row: number; col: number }>({
-    row: 0,
-    col: 0,
-  });
+  const [currentCell, setCurrentCell] = useState<{ row: number; col: number } | null>(null);
+
   const [isEditCell, setIsEditCell] = useState(false);
+
+  const tableRef = useRef<HTMLTableElement |null >(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (tableRef.current && !tableRef.current.contains(event.target as Node)) {
+        setIsEditCell(false);
+        setCurrentCell(null);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
 
   const {data: colData, isLoading: colLoading} = api.table.getColumnDataByTableId.useQuery({id: tableId});
@@ -347,7 +361,6 @@ export function TableContent({
 
   const rows = useMemo(
     () => {
-      console.log("row data changed");
       const fieldsWithSearchTerm = new Set<string>();
       let cellsWithSearchTerm = 0;
 
@@ -410,12 +423,6 @@ export function TableContent({
     overscan: 20,
   })
 
-  useEffect(() => {
-    console.log('Sort config changed:', sortConfig);
-    console.log('Row data length:', rowData?.length);
-    console.log('Processed rows length:', rows);
-    console.log('Table rows:', table.getRowModel().rows);
-  }, [sortConfig, rowData?.length, rows.length, table.getRowModel().rows.length]);
 
   useEffect(() => {
     const [lastItem] = [...virtualizer.getVirtualItems()].reverse();
@@ -552,8 +559,14 @@ const tableRenderKey = useMemo(() =>
   return (
     <div className="w-full">
       <div ref={parentRef} className="w-full h-full overflow-y-auto">
-        <table key={tableRenderKey} className="border-collapse" style={{ width: 'max-content', height: `${virtualizer.getTotalSize()}px`}}>
-          <thead>
+        <table ref={tableRef} key={tableRenderKey} className="border-collapse" style={{ width: 'max-content', height: `${virtualizer.getTotalSize()}px`}}>
+          <thead className="
+            sticky top-0 bg-white z-10
+            after:content-[''] 
+            after:absolute after:top-0 after:left-0 after:w-full after:h-full 
+            after:border-b after:border-r after:border-gray-300
+            after:pointer-events-none
+          ">            
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}> 
                 <th className="w-25 border-b border-gray-300">{" "}</th>
@@ -588,7 +601,7 @@ const tableRenderKey = useMemo(() =>
                     </th>
                   )
                 })}
-                <th className="border-b border-r py-1 border-gray-300 hover:bg-gray-100">
+                <th className="border-b py-1 border-gray-300 hover:bg-gray-100">
                   <AddColumnMenu tableId={tableId}/>
                 </th>
               </tr>

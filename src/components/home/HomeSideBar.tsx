@@ -26,14 +26,14 @@ export function HomeSideBar() {
     <div className="h-full w-75 border-r-2 border-gray-200 flex flex-col items-center justify-between sticky top-14 z-10">
       <div className="flex flex-col items-center m-3 gap-1">
         
-        <div className="h-10 w-70 bg-gray-100 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4">
+        <div className="h-10 w-70 bg-gray-100 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4 hover:cursor-pointer">
           <div className="flex flex-row items-center gap-2">
             <House size={18} />
             Home
           </div>
         </div>
 
-        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4">
+        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4 hover:cursor-pointer">
           <div className="flex flex-row items-center gap-2">
             <Star size={18} />
             Starred
@@ -43,14 +43,21 @@ export function HomeSideBar() {
           </div>
         </div>
 
-        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4">
+        <div className="h-8 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4 gap-3">
+          <button className="border border-gray-200 text-gray-400 rounded-xs p-2">
+            <Star size={14} />
+          </button>
+          <span className="text-[11px] text-gray-500 leading-[0.8rem] font-normal">Your starred bases, interfaces, and workspaces will appear here</span>
+        </div>
+
+        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4 hover:cursor-pointer">
           <div className="flex flex-row items-center gap-2">
             <SquareArrowOutUpRight size={18} />
             Shared
           </div>
         </div>
 
-        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4">
+        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4 hover:cursor-pointer">
           <div className="flex flex-row items-center gap-2">
             <UsersRound size={18} />
             Workspaces
@@ -63,25 +70,25 @@ export function HomeSideBar() {
 
       </div>
 
-      <div className="flex flex-col items-center m-3 gap-1">
-        <div className="mb-3 w-60 border border-gray-200"></div>
-        <div className="h-8 w-70 text-black text-sm flex flex-row items-center px-4 gap-2">
+      <div className="flex flex-col items-center m-3">
+        <div className="mb-4 w-65 border border-gray-100"></div>
+        <div className="h-8 w-70 text-black text-xs flex flex-row items-center px-4 gap-2  hover:cursor-pointer">
           <BookOpen size={14} />
           Templates and apps
         </div>
 
-        <div className="h-8 w-70 text-black text-sm flex flex-row items-center px-4 gap-2">
+        <div className="h-8 w-70 text-black text-xs flex flex-row items-center px-4 gap-2 hover:cursor-pointer">
           <ShoppingBag size={14} />
           Marketplace
         </div>
 
-        <div className="h-8 w-70 text-black text-sm flex flex-row items-center px-4 gap-2">
+        <div className="h-8 w-70 text-black text-xs flex flex-row items-center px-4 gap-2 hover:cursor-pointer">
           <Download size={14} />
           Import
         </div>
 
         <button 
-          className="mt-3 mb-3 h-8 w-68 bg-blue-600 text-white font-semibold flex flex-row items-center justify-center px-4 gap-2 rounded-md hover:cursor-pointer"
+          className="mt-3 mb-3 h-8 w-68 bg-blue-600 text-white text-sm font-semibold flex flex-row items-center justify-center px-4 gap-2 rounded-md hover:cursor-pointer"
           onClick={() => void createTableMutation.mutate({ name: "Untitled Base" })}
         >
           <Plus size={20} />
