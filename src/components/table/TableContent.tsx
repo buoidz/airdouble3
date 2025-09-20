@@ -16,38 +16,91 @@ type CellValue = {
 };
 
 
-type RowData = Record<string, CellValue>;
+type RowData = Record<string, CellValue> & { originalRowId: string };
+
+type PendingChange = {
+  rowId: number;
+  columnId: string;
+  value: string;
+};
 
 
 type EditableCellProps = {
   initialValue: string; 
   tableId: string; 
   columnId: string; 
-  rowId: string; 
+  rowId: number; 
   columnType: ColumnType;
   isCurrent: boolean;
   setIsEditCell: (isEditCell: boolean) => void;
+  pendingChanges: PendingChange[], 
+  setPendingChanges: React.Dispatch<React.SetStateAction<PendingChange[]>> 
 }
 
-function EditableCell({ initialValue, tableId, columnId, rowId, columnType, isCurrent, setIsEditCell }: EditableCellProps) {
+function EditableCell({ 
+  initialValue, 
+  tableId, 
+  columnId, 
+  rowId, 
+  columnType, 
+  isCurrent, 
+  setIsEditCell,
+  pendingChanges,
+  setPendingChanges ,
+}: EditableCellProps) {
   const utils = api.useUtils();
-  const [value , setValue] = useState(initialValue);
+
+  // Check if there's a pending change for this cell
+  const pendingChange = pendingChanges.find(
+    change => change.rowId === rowId && change.columnId === columnId
+  );
+  
+  // Use pending change value if it exists, otherwise use initial value
+  const displayValue = pendingChange ? pendingChange.value : initialValue;
+  if (displayValue && pendingChange) {
+    console.log("inside editable cell")
+    console.log(pendingChange.value);
+  }
+  
+
+  const [value, setValue] = useState(displayValue);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const divRef = useRef<HTMLDivElement>(null);
 
   const updateCellMutation = api.table.updateCell.useMutation({
-    onSuccess: () => {
-      void utils.table.getRowDataByOperations.invalidate();
+    onSuccess: async () => {
+      await utils.table.getRowDataByOperations.invalidate();
     },
+    onError: () => {
+      setValue(initialValue);
+    },
+    onSettled: () => {
+      setPendingChanges(prev => 
+        prev.filter(change => !(change.rowId === rowId && change.columnId === columnId))
+      );
+    }
   });
+
+  useEffect(() => {
+    if (!editing) {
+      setValue(displayValue);
+
+    }
+  }, [displayValue, editing]);
 
   const commitChange = () => {
     if (value !== initialValue) {
+      setPendingChanges(prev => {
+        const filtered = prev.filter(change => !(change.rowId === rowId && change.columnId === columnId));
+        return [...filtered, { rowId, columnId, value }];
+      });
       updateCellMutation.mutate({ tableId, rowId, columnId, value });
     }
   };
+
+
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === "Escape") {
@@ -61,6 +114,23 @@ function EditableCell({ initialValue, tableId, columnId, rowId, columnType, isCu
   };
 
   useEffect(() => {
+    if (!editing) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (divRef.current && !divRef.current.contains(event.target as Node)) {
+        commitChange();
+        setEditing(false);
+        setIsEditCell(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [editing, commitChange, setIsEditCell]);
+
+  useEffect(() => {
     if (isCurrent && !editing) {
       divRef.current?.focus();
     }
@@ -72,6 +142,8 @@ function EditableCell({ initialValue, tableId, columnId, rowId, columnType, isCu
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+
 
 
   return (
@@ -139,7 +211,7 @@ function AddColumnMenu({tableId}: {tableId: string}) {
   const [newColumnType, setNewColumnType] = useState<ColumnType | null>(null);
 
   const addColumnMutation = api.table.addColumns.useMutation({
-    onSuccess: () => {
+    onSuccess: async() => {
       void utils.table.getColumnDataByTableId.invalidate();
       void utils.table.getRowDataByOperations.invalidate();
       setNewColumnName("");
@@ -266,7 +338,7 @@ type TableContentProps = {
   setNumCellsContainSearchTerm: React.Dispatch<React.SetStateAction<number>>;
   columnVisibility: VisibilityState,
   setColumnVisibility: React.Dispatch<React.SetStateAction<VisibilityState>>;
-  isViewReady: boolean
+  isViewReady: boolean,
 }
 
 
@@ -288,6 +360,9 @@ export function TableContent({
   const [currentCell, setCurrentCell] = useState<{ row: number; col: number } | null>(null);
 
   const [isEditCell, setIsEditCell] = useState(false);
+
+  const [pendingChanges, setPendingChanges] = useState<PendingChange[]>([]);
+
 
   const tableRef = useRef<HTMLTableElement |null >(null);
 
@@ -342,21 +417,23 @@ export function TableContent({
           size: 150,
           minSize: 50,
           maxSize: 500,
-          cell: (props: CellContext<RowData, unknown>) => {
+          cell: (props: CellContext<RowData & { originalRowId: string }, unknown>) => {
             const cellValue = props.getValue() as CellValue | undefined;
             
             return <EditableCell
               initialValue={cellValue?.value ?? ""}
               tableId={tableId}
-              rowId={props.row.id}
+              rowId={Number(props.row.id)}
               columnId={col.id}
               columnType={col.type}
               isCurrent={currentCell?.row === props.row.index && currentCell?.col === colIndex}
               setIsEditCell={setIsEditCell}
+              pendingChanges={pendingChanges}
+              setPendingChanges={setPendingChanges}
             />;
           },      
       })) ?? [], 
-    [colData, tableId, currentCell?.row, currentCell?.col]
+    [colData, tableId, currentCell?.row, currentCell?.col, pendingChanges]
   );
 
   const rows = useMemo(
@@ -365,7 +442,7 @@ export function TableContent({
       let cellsWithSearchTerm = 0;
 
       const mappedRows = rowData?.map((row: RowDataRaw) => {
-        const rowObj: RowData = {};
+        const rowObj: Record<string, CellValue> = {};
         row.cells.forEach((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null; containSearchTerm: true | false}) => {
           const value = cell.textValue ?? String(cell.numberValue ?? "");
           
@@ -380,7 +457,7 @@ export function TableContent({
           }
         });
 
-        return rowObj;
+        return { ...rowObj, originalRowId: row.id } as RowData;
       }) ?? [];
 
       setNumFieldsContainSearchTerm?.(fieldsWithSearchTerm.size);
@@ -412,6 +489,7 @@ export function TableContent({
       columnVisibility,
     },
     onColumnVisibilityChange: setColumnVisibility,
+    getRowId: (row) => row.originalRowId,
   });
 
   const parentRef = React.useRef<HTMLDivElement>(null)
@@ -482,6 +560,11 @@ export function TableContent({
       row.cells.some(cell => cell.columnId === columnId && cell.containSearchTerm)
     );
   };
+
+  useEffect(() => {
+    console.log("pending changes updated:");
+    console.log(pendingChanges);
+  }, [pendingChanges]);
 
   const handleCellNavigation = (e: React.KeyboardEvent, currentCell: {row: number; col: number}) => {
     const { row, col } = currentCell;
@@ -659,11 +742,11 @@ const tableRenderKey = useMemo(() =>
                           handleCellNavigation(e, currentCell);
                         }}
                         className={`border-r border-b border-gray-300 px-4 text-sm text-gray-800 ${getBgColor()} ${
-                          isCurrent ? "outline-1 outline-blue-500" : ""
+                          isCurrent ? "shadow-[inset_0_0_0_1px_rgb(59_130_246)]" : ""
                         }`}
                         style={{ 
                           width: cell.column.getSize(), 
-                          height: `${virtualRow.size-1}px`,   
+                          height: `${virtualRow.size}px`,   
                           maxWidth: cell.column.getSize(),
                           minWidth: cell.column.getSize()
                         }}

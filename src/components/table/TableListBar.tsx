@@ -12,10 +12,11 @@ type TableListBarProps = {
   baseId: string
   selectedTableId: string
   setSelectedTableId: (id: string) => void;
+  isAdding100k: boolean
 }
 
 
-function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableListBarProps) {
+function TableMenu({tables, baseId, selectedTableId, setSelectedTableId, isAdding100k}: TableListBarProps) {
   const utils = api.useUtils();
   const tableCorlor = lighten(0.3, getRainbowColorFromId(baseId));
 
@@ -177,7 +178,9 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
             <Menu key={table.id} as="div">
               <MenuButton
                 onClick={() => setSelectedTableId(table.id)}
-                className="h-full pl-4 rounded-sm rounded-b-none border-b border-gray-300 text-xs font-normal text-gray-700 whitespace-nowrap hover:cursor-pointer"
+                className={`h-full pl-4 rounded-sm rounded-b-none border-b border-gray-300 text-xs font-normal text-gray-700 whitespace-nowrap ${
+                  isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
+                }`}
                 style={{ backgroundColor: tableCorlor, outline: 'none' }}
                 onMouseEnter={(e) =>
                   (e.currentTarget.style.backgroundColor = rgba(getRainbowColorFromId(baseId), 0.2))
@@ -201,7 +204,7 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId}: TableL
 }
 
 
-export function TableListBar({tables, baseId, selectedTableId, setSelectedTableId}: TableListBarProps) {
+export function TableListBar({tables, baseId, selectedTableId, setSelectedTableId, isAdding100k}: TableListBarProps) {
   const utils = api.useUtils();
 
 
@@ -230,13 +233,26 @@ export function TableListBar({tables, baseId, selectedTableId, setSelectedTableI
       className="h-8 flex flex-row items-center sticky top-14 z-50"
       style={{ backgroundColor: tableCorlor }}
     > 
-      <TableMenu tables={tables} baseId={baseId} selectedTableId={selectedTableId} setSelectedTableId={setSelectedTableId}/>
+      <TableMenu 
+        tables={tables} 
+        baseId={baseId} 
+        selectedTableId={selectedTableId} 
+        setSelectedTableId={setSelectedTableId} 
+        isAdding100k={isAdding100k}
+      />
       
       <div className="h-full w-full px-4 border-b border-gray-300 flex flex-row justify-between items-center">
         <div className="flex flex-row justify-between items-center gap-6">
-          <ChevronDown className="text-black" size={16} />
+          <ChevronDown 
+            className={`text-black ${
+              isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
+            }`} 
+            size={16} 
+          />
           <button 
-            className="text-xs font-normal text-gray-700 flex flex-row justify-between items-center gap-2 hover:cursor-pointer"
+            className={`text-xs font-normal text-gray-700 flex flex-row justify-between items-center gap-2 ${
+              isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
+            }`}
             onClick={handleAddTable}
             disabled={addTableMutation.isPending}
             style={{ outline: "none"}}

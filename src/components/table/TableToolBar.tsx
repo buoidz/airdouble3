@@ -18,31 +18,16 @@ type ColumnObj = {
 };
 
 
-function Add100KMenu({tableId}: {tableId: string}) {
+function Add100KMenu({tableId, setIsAdding100k}: {tableId: string, setIsAdding100k: React.Dispatch<React.SetStateAction<boolean>>;
+}) {
   const utils = api.useUtils();
-  const addRowsMutation = api.table.add100KRows.useMutation(); // smaller mutation
-  const [isRunning, setIsRunning] = useState(false);
-  // const [progress, setProgress] = useState(0);
+  const addRowsMutation = api.table.add100KRows.useMutation();
 
   const handleAddRows = async () => {
-    setIsRunning(true);
-    // setProgress(0);
+    setIsAdding100k(true);
     await addRowsMutation.mutateAsync({ tableId });
-
-    // for (let i = 0; i < 10; i++) {
-    //   try {
-    //     await addRowsMutation.mutateAsync({ tableId });
-    //     setProgress((prev) => prev + 1);
-    //     await utils.table.getRowDataByOperations.invalidate();
-
-    //   } catch (err) {
-    //     console.error(`Batch ${i + 1} failed`, err);
-    //     break;
-    //   }
-    // }
-
     void utils.table.getRowDataByOperations.invalidate(); 
-    setIsRunning(false);
+    setIsAdding100k(false);
   };
 
 
@@ -52,10 +37,9 @@ function Add100KMenu({tableId}: {tableId: string}) {
       onClick={handleAddRows}
       disabled={addRowsMutation.isPending}
     >
-      {isRunning ?  <LoadingSpinner /> :<ListPlus size={14} />}
+      {addRowsMutation.isPending ?  <LoadingSpinner /> :<ListPlus size={14} />}
       <div className="text-xs">
-        {/* {isRunning ? `Adding... (${progress*10}%)` : "Add 100K Rows"} */}
-        {isRunning ? `Adding...` : "Add 100K Rows"}
+        {addRowsMutation.isPending ? `Adding...` : "Add 100K Rows"}
 
       </div>
     </button>
@@ -67,12 +51,14 @@ type HideFieldsMenuProps = {
   columns: ColumnObj[],
   columnVisibility: VisibilityState,
   setColumnVisibility: React.Dispatch<React.SetStateAction<VisibilityState>>;
+  isAdding100k: boolean;
 };
 
 function HideFieldsMenu({
   columns,
   columnVisibility,
-  setColumnVisibility
+  setColumnVisibility,
+  isAdding100k,
 }: HideFieldsMenuProps) {
   const [searchTermHiddenFields, setSearchTermHiddenFields] = useState("");
 
@@ -113,9 +99,11 @@ function HideFieldsMenu({
 
   return (
     <Menu>
-      <MenuButton className={`p-2 rounded-sm flex flex-row border-2 border-white items-center gap-2 hover:cursor-pointer focus:ring-0 focus:outline-none ${
-        numHiddenColumn === 0 ? "hover:bg-gray-100" : "bg-blue-100 hover:border-gray-300"
-      }`}
+      <MenuButton 
+        className={`p-2 rounded-sm flex flex-row border-2 border-white items-center gap-2 focus:ring-0 focus:outline-none ${
+          numHiddenColumn === 0 ? "hover:bg-gray-100" : "bg-blue-100 hover:border-gray-300"
+        } ${isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "}`}
+        disabled={isAdding100k}
       >
         
         <EyeOff size={14} />
@@ -193,6 +181,7 @@ type FilterMenuProps = {
   setFilterConfig: React.Dispatch<React.SetStateAction<FilterConfig[]>>;
   filterCondition: "AND" | "OR";
   setFilterCondition: React.Dispatch<React.SetStateAction<"AND" | "OR">>;
+  isAdding100k: boolean;
 };
 
 const filterTypesText: Record<string, string> = {
@@ -218,6 +207,7 @@ function FilterMenu({
   setFilterConfig,
   filterCondition,
   setFilterCondition,
+  isAdding100k,
 }: FilterMenuProps) {
   const addFilter = () => {
     const availableColumn = columns?.find((col) => !filterConfig.some((f) => f.columnId === col.id));
@@ -262,7 +252,8 @@ function FilterMenu({
       <MenuButton 
         className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white hover:cursor-pointer focus:ring-0 focus:outline-none ${
           filterConfig.length > 0 ? 'bg-green-200  hover:border-gray-300' : 'hover:bg-gray-100'
-        }`}
+        } ${isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "}`}
+        disabled={isAdding100k}
       >
         <ListFilter size={14} />
         {filterConfig.length > 0 ? (
@@ -369,12 +360,14 @@ type SortMenuProps = {
   columns: ColumnObj[];
   sortConfig: SortConfig[];
   setSortConfig: React.Dispatch<React.SetStateAction<SortConfig[]>>;
+  isAdding100k: boolean;
 };
 
 function SortMenu({
   columns,
   sortConfig,
   setSortConfig,
+  isAdding100k,
 }: SortMenuProps) {  
   const addSort = (columnId: string, colType: ColumnType) => {
     setSortConfig([...sortConfig, {
@@ -424,7 +417,8 @@ function SortMenu({
         <MenuButton 
           className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white hover:cursor-pointer focus:ring-0 focus:outline-none ${
             sortConfig.length > 0 ? 'bg-red-100  hover:border-gray-300' : 'hover:bg-gray-100'
-          }`}
+          } ${isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "}`}
+          disabled={isAdding100k}
         >
           <ArrowUpDown size={14} />
           {sortConfig.length > 0 ? (
@@ -524,7 +518,8 @@ type SearchMenuProps = {
   searchTerm: string;
   setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
   numFields: number;
-  numCells: number
+  numCells: number;
+  isAdding100k: boolean;
 };
 
 function SearchMenu({
@@ -532,6 +527,7 @@ function SearchMenu({
   setSearchTerm,
   numFields,
   numCells,
+  isAdding100k,
 } : SearchMenuProps) {
 
   const handleClose = () => {
@@ -559,7 +555,8 @@ function SearchMenu({
       <MenuButton 
         className={`p-2 rounded-sm focus:ring-0 focus:outline-none hover:bg-gray-100 hover:cursor-pointer ${
           searchTerm === "" ? "" : "bg-yellow-200"
-        }`}
+        } ${isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "}`}
+        disabled={isAdding100k}
       >
         <Search size={16} />
       </MenuButton>
@@ -600,11 +597,13 @@ type TableToolBarProps = {
   sortConfig: SortConfig[];
   setSortConfig: React.Dispatch<React.SetStateAction<SortConfig[]>>;
   searchTerm: string;
-  setSearchTerm: React.Dispatch<React.SetStateAction<string>>
+  setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
   numFieldsContainSearchTerm: number;
   numCellsContainSearchTerm: number;
   columnVisibility: VisibilityState,
   setColumnVisibility: React.Dispatch<React.SetStateAction<VisibilityState>>;
+  isAdding100k: boolean
+  setIsAdding100k: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export function TableToolBar({
@@ -621,6 +620,8 @@ export function TableToolBar({
   numCellsContainSearchTerm,
   columnVisibility,
   setColumnVisibility,
+  isAdding100k,
+  setIsAdding100k,
 }: TableToolBarProps) {
   const {data: columns} = api.table.getColumnDataByTableId.useQuery({id: tableId});
 
@@ -630,10 +631,15 @@ export function TableToolBar({
     <div className="h-12 flex flex-row justify-between items-center border-b border-gray-300 bg-white  sticky top-22 z-50">
 
       <div className="p-5 flex flex-row items-center">
-        <button className="p-2 rounded-md hover:bg-gray-100 hover:cursor-pointer">
+        <button 
+          className={`p-2 rounded-md hover:bg-gray-100 ${
+            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
+          }`}>
           <MenuIcon size={16} />
         </button>
-        <button className="m-2 p-1 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer">
+        <button className={`m-2 p-1 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 ${
+            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
+          }`}>
           <Table2 className="text-blue-500" size={16} />
           <div className="text-xs font-semibold">Grid view</div>
           <ChevronDown size={16} />
@@ -641,11 +647,12 @@ export function TableToolBar({
       </div>
 
       <div className="p-2 flex flex-row items-center text-gray-500 gap-3">
-        <Add100KMenu tableId={tableId} />
+        <Add100KMenu tableId={tableId} setIsAdding100k={setIsAdding100k}/>
         <HideFieldsMenu
           columns={columns}
           columnVisibility={columnVisibility}
           setColumnVisibility={setColumnVisibility}
+          isAdding100k={isAdding100k}
         />
         <FilterMenu 
           columns={columns}
@@ -653,8 +660,13 @@ export function TableToolBar({
           setFilterConfig={setFilterConfig}
           filterCondition={filterCondition}
           setFilterCondition={setFilterCondition}
+          isAdding100k={isAdding100k}
         />
-        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer">
+        <button 
+          className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer ${
+            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
+          }`}
+        >          
           <SquareLibrary size={14} />
           <div className="text-xs ">Group</div>
         </button>
@@ -662,15 +674,28 @@ export function TableToolBar({
           columns={columns}
           sortConfig={sortConfig}
           setSortConfig={setSortConfig}
+          isAdding100k={isAdding100k}
         />
-        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer">
+        <button 
+          className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer ${
+            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
+          }`}
+        >
           <PaintBucket size={14} />
           <div className="text-xs ">Color</div>
         </button>
-        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer">
+        <button 
+          className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer ${
+            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
+          }`}
+        >         
           <ListChevronsUpDown size={14} />
         </button>
-        <button className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer">
+        <button 
+          className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer ${
+            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
+          }`}
+        >          
           <ExternalLink size={14} />
           <div className="text-xs ">Share and sync</div>
         </button>
@@ -679,6 +704,7 @@ export function TableToolBar({
           setSearchTerm={setSearchTerm}
           numFields={numFieldsContainSearchTerm}
           numCells={numCellsContainSearchTerm}
+          isAdding100k={isAdding100k}
         />
       </div>
 

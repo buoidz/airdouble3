@@ -244,7 +244,7 @@ export const tableRouter = createTRPCRouter({
     }),
 
   updateCell: publicProcedure
-    .input(z.object({ tableId: z.string(), rowId: z.string(), columnId: z.string(), value: z.string() }))
+    .input(z.object({ tableId: z.string(), rowId: z.number(), columnId: z.string(), value: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const currentUser = ctx.currentUser;
       if (!currentUser) {
@@ -468,40 +468,6 @@ export const tableRouter = createTRPCRouter({
 
       await ctx.db.cell.createMany({ data: cells });
     }
-      
-      // const currentOrder = oldRows ? oldRows.order + 1 : 0;
-      // const batchSize = 1000;
-
-      // const dataRows = Array.from({ length: batchSize}, (_, index) => ({
-      //   tableId: input.tableId,
-      //   order: currentOrder + index,
-      // }));
-
-      // await ctx.db.row.createMany({
-      //   data: dataRows
-      // })
-
-      // const insertedRows = await ctx.db.row.findMany({
-      //   where: {
-      //     tableId: input.tableId,
-      //     order: {
-      //       gte: currentOrder,
-      //       lt: currentOrder + batchSize,
-      //     },
-      //   },
-      //   orderBy: { order: "asc" },
-      // });
-
-      // await ctx.db.cell.createMany({
-      //   data: columns.flatMap((column) => (
-      //     insertedRows.map((row) => ({
-      //       rowId: row.id,
-      //       columnId: column.id,
-      //       textValue: column.type === ColumnType.TEXT ? faker.lorem.words({min: 1, max: 3}) : null,
-      //       numberValue: column.type === ColumnType.NUMBER ? faker.number.int({ max: 1000000000000}) : null,
-      //     }))
-      //   )),
-      // });
     }),
 
 

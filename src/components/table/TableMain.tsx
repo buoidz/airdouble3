@@ -72,6 +72,9 @@ export function TableMain({baseId}: {baseId: string}) {
   const [numCellsContainSearchTerm, setNumCellsContainSearchTerm] = useState(0);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
+  const [isAdding100k, setIsAdding100k] = useState(false);
+
+
   const [isViewReady, setIsViewReady] = useState(false);
 
   useEffect(() => {
@@ -203,7 +206,13 @@ export function TableMain({baseId}: {baseId: string}) {
 
   return (
     <div className="w-full flex flex-col border-collapse">
-      <TableListBar tables={tableProps} baseId={baseId} selectedTableId={selectedTableId} setSelectedTableId={setSelectedTableId}/>
+      <TableListBar 
+        tables={tableProps} 
+        baseId={baseId} 
+        selectedTableId={selectedTableId} 
+        setSelectedTableId={setSelectedTableId} 
+        isAdding100k={isAdding100k}
+      />
       <TableToolBar 
         tableId={selectedTableId}
         filterConfig={filterConfig}
@@ -218,6 +227,8 @@ export function TableMain({baseId}: {baseId: string}) {
         numCellsContainSearchTerm={numCellsContainSearchTerm}
         columnVisibility={columnVisibility}
         setColumnVisibility={setColumnVisibility}
+        isAdding100k={isAdding100k}
+        setIsAdding100k={setIsAdding100k}
       /> 
       
       <div className="flex flex-row pl-70 overflow-hidden"  style={{ height: `calc(100vh - 56px - 32px - 48px)` }}>
@@ -226,6 +237,7 @@ export function TableMain({baseId}: {baseId: string}) {
           views={views}
           selectedView={selectedView}
           handleSwitchView={handleSwitchView}
+          isAdding100k={isAdding100k}
         />
         <TableContent 
           tableId={selectedTableId} 

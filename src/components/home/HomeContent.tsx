@@ -36,8 +36,8 @@ export function HomeContent()  {
 
   const utils = api.useUtils();
   const deleteBaseMutation = api.base.deleteBase.useMutation({
-    onSuccess: () => {
-      void utils.base.getAllBases.invalidate();
+    onSuccess: async () => {
+      await utils.base.getAllBases.invalidate();
     },
   });
 
