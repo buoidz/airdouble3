@@ -383,6 +383,7 @@ export function TableContent({
     fetchNextPage, 
     hasNextPage, 
     isFetchingNextPage,
+    isFetching,
     isLoading: rowLoading
   } = api.table.getRowDataByOperations.useInfiniteQuery(
     {
@@ -621,7 +622,7 @@ const tableRenderKey = useMemo(() =>
 );
 
   
-  if(colLoading || rowLoading){
+  if(colLoading || rowLoading || isFetching){
     return <LoadingPage />
   }
   if(!rowData || !colData || colData.length === 0){
