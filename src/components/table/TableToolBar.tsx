@@ -26,7 +26,7 @@ function Add100KMenu({tableId, setIsAdding100k}: {tableId: string, setIsAdding10
   const handleAddRows = async () => {
     setIsAdding100k(true);
     await addRowsMutation.mutateAsync({ tableId });
-    void utils.table.getRowDataByOperations.invalidate(); 
+    await utils.table.getRowDataByOperations.invalidate(); 
     setIsAdding100k(false);
   };
 
@@ -250,7 +250,7 @@ function FilterMenu({
   return (
     <Menu>
       <MenuButton 
-        className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white hover:cursor-pointer focus:ring-0 focus:outline-none ${
+        className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white focus:ring-0 focus:outline-none ${
           filterConfig.length > 0 ? 'bg-green-200  hover:border-gray-300' : 'hover:bg-gray-100'
         } ${isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "}`}
         disabled={isAdding100k}
@@ -415,7 +415,7 @@ function SortMenu({
     <>
       <Menu>
         <MenuButton 
-          className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white hover:cursor-pointer focus:ring-0 focus:outline-none ${
+          className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white focus:ring-0 focus:outline-none ${
             sortConfig.length > 0 ? 'bg-red-100  hover:border-gray-300' : 'hover:bg-gray-100'
           } ${isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "}`}
           disabled={isAdding100k}
@@ -553,7 +553,7 @@ function SearchMenu({
   return (
     <Menu>
       <MenuButton 
-        className={`p-2 rounded-sm focus:ring-0 focus:outline-none hover:bg-gray-100 hover:cursor-pointer ${
+        className={`p-2 rounded-sm focus:ring-0 focus:outline-none hover:bg-gray-100 ${
           searchTerm === "" ? "" : "bg-yellow-200"
         } ${isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "}`}
         disabled={isAdding100k}
@@ -663,7 +663,7 @@ export function TableToolBar({
           isAdding100k={isAdding100k}
         />
         <button 
-          className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer ${
+          className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 ${
             isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
           }`}
         >          
@@ -677,7 +677,7 @@ export function TableToolBar({
           isAdding100k={isAdding100k}
         />
         <button 
-          className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer ${
+          className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 ${
             isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
           }`}
         >
@@ -685,14 +685,14 @@ export function TableToolBar({
           <div className="text-xs ">Color</div>
         </button>
         <button 
-          className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer ${
+          className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 ${
             isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
           }`}
         >         
           <ListChevronsUpDown size={14} />
         </button>
         <button 
-          className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer ${
+          className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 ${
             isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
           }`}
         >          
