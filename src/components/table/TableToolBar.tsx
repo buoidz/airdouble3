@@ -136,11 +136,11 @@ function HideFieldsMenu({
           {columnsSearched.map((col) => (
             <button 
               key={col.id} 
-              className="px-2 text-start text-sm rounded-sm flex flex-row items-center gap-6 hover:bg-gray-100 focus:ring-0 focus:outline-none  hover:cursor-pointer"
+              className="px-2 text-start text-sm rounded-sm flex flex-row items-center gap-6 hover:bg-gray-100 focus:ring-0 focus:outline-none  hover:cursor-pointer truncate overflow-hidden whitespace-nowrap text-ellipsis"
               onClick={() => toggleColumnVisibility(col.id)}
             >
               <div 
-                className={`w-3.5 h-2 px-0.5 flex items-center rounded-xl ${
+                className={`w-3.5 h-2 px-0.5 flex flex-shrink-0 items-center rounded-xl ${
                     columnVisibility[col.id] ? "bg-green-500 " : "bg-gray-300"
                 }`}
               >
@@ -192,9 +192,9 @@ const filterTypesText: Record<string, string> = {
   textIsEmpty: "empty",
 };
 const filterTypesNumber: Record<string, string> = {
+  numEqualTo: "equals",
   numGreaterThan: "greater than",
   numSmallerThan: "smaller than",
-  numEqualTo: "equals",
 };
 const filterConditionAll: Record<"AND" | "OR", string> = {
   AND: "and",
@@ -242,9 +242,12 @@ function FilterMenu({
     setFilterConfig(filterConfig.filter((_, i) => i !== index));
   };
 
+  const MAX_CHAR = 10;
+
   const filteredColumnNames = filterConfig
     .map((filter) => columns?.find((col) => col.id === filter.columnId)?.name)
     .filter((name): name is string => !!name)
+    .map((name) => (name.length > MAX_CHAR ? name.slice(0, MAX_CHAR) + "..." : name))
     .join(', ');
  
   return (
@@ -313,7 +316,7 @@ function FilterMenu({
               <select
                 value={filter.type}
                 onChange={(e) => updateFilter(index, "type", e.target.value)}
-                className="text-xs border-l border-t border-b border-gray-200 p-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none hover:cursor-pointer"
+                className="w-20 text-xs border-l border-t border-b border-gray-200 p-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none hover:cursor-pointer"
               >
                 {Object.keys(types).map((key) => (
                     <option key={key} value={key}>{types[key]}</option>
@@ -405,10 +408,12 @@ function SortMenu({
   const removeSort = (index: number) => {
     setSortConfig(sortConfig.filter((_, i) => i !== index));
   };
-  
+ 
+  const MAX_CHAR = 10;
   const sortedColumnNames = sortConfig
     .map((sort) => columns?.find((col) => col.id === sort.columnId)?.name)
     .filter((name): name is string => !!name)
+    .map((name) => (name.length > MAX_CHAR ? name.slice(0, MAX_CHAR) + "..." : name))
     .join(', ');
 
   return (
@@ -441,7 +446,7 @@ function SortMenu({
               {columns?.map((col) => (
                 <button 
                   key={col.id}
-                  className="px-2 py-1 w-full text-start text-sm text-black rounded hover:bg-gray-100  hover:cursor-pointer"
+                  className="px-2 py-1 w-full text-start text-sm text-black rounded hover:bg-gray-100  hover:cursor-pointer truncate text-ellipsis"
                   onClick={() => {addSort(col.id, col.type)}}
                 >
                   {col.name}
@@ -452,7 +457,7 @@ function SortMenu({
         ) : (
           <MenuItems 
             anchor="bottom"
-            className="[--anchor-gap:3px] z-60 w-110 rounded-md border border-gray-200 shadow-lg bg-white px-4 py-2 focus:outline-none"
+            className="[--anchor-gap:3px] z-60 rounded-md border border-gray-200 shadow-lg bg-white px-4 py-2 focus:outline-none"
           >
             <div className="flex flex-row items-center gap-1">
               <span className="text-gray-500 text-sm font-semibold py-2">Sort by</span>
@@ -466,7 +471,6 @@ function SortMenu({
 
                 return (
                   <div key={sort.columnId} className="pt-2 flex flex-row gap-2">
-
                     <select
                       value={sort.columnId}
                       onChange={(e) => updateSort(index, "columnId", e.target.value)}
@@ -562,7 +566,7 @@ function SearchMenu({
       </MenuButton>
       <MenuItems
         anchor="bottom end"
-        className="[--anchor-gap:4px] rounded-sm border border-gray-300 bg-white focus:outline-none focus:ring-0"
+        className="[--anchor-gap:4px] rounded-sm border border-gray-300 bg-white focus:outline-none focus:ring-0 z-20"
       >
         <div className="flex flex-row gap-2 justify-between items-center m-1 mr-2">
           <input

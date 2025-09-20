@@ -8,11 +8,11 @@ export function BaseTopBar({baseName, baseId}: {baseName: string; baseId: string
 
   return (
     <div className="h-14 bg-white border-b border-gray-300 grid grid-cols-3 items-center px-4 sticky top-0 z-10">
-      <div className="flex flex-row gap-2">
+      <div className="flex flex-row gap-2 items-center">
         <div className="rounded-md" style={{ backgroundColor: tableColor }}>
           <Image src="/airtable-white.png" alt="Airtable Logo" width={40} height={40} className="h-6 w-6 m-1" />
         </div>
-        <div className="text-black text-xl font-semibold">{baseName}</div>
+        <div className="text-black text-[18px] font-bold">{baseName}</div>
       </div>
 
       <div className="h-full flex flex-row items-center justify-center gap-4">

@@ -3,7 +3,7 @@ import { LoadingPage, LoadingSpinner } from "../LoadingPage";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { flexRender, getCoreRowModel, useReactTable, type CellContext, type VisibilityState } from "@tanstack/react-table";
-import { Baseline, Hash, Plus } from "lucide-react";
+import { Baseline, Hash, Plus, PlusIcon, WandSparkles } from "lucide-react";
 import { ColumnType } from "@prisma/client";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import type { FilterConfig, SortConfig } from "./TableMain";
@@ -640,8 +640,8 @@ const tableRenderKey = useMemo(() =>
 
   return (
     <div className="w-full">
-      <div ref={parentRef} className="w-full h-full overflow-y-auto">
-        <table ref={tableRef} key={tableRenderKey} className="border-collapse" style={{ width: 'max-content', height: `${virtualizer.getTotalSize()}px`}}>
+      <div ref={parentRef} className="relative w-full h-full overflow-y-auto bg-gray-50">
+        <table ref={tableRef} key={tableRenderKey} className="border-collapse bg-white" style={{ width: 'max-content', height: `${virtualizer.getTotalSize()}px`}}>
           <thead className="
             sticky top-0 bg-white z-10
             after:content-[''] 
@@ -651,8 +651,8 @@ const tableRenderKey = useMemo(() =>
           ">            
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}> 
-                <th className="w-25 border-b border-gray-300">{" "}</th>
-                {headerGroup.headers.map((header) => { 
+                <th className="w-25 border-b border-gray-300 sticky left-0 z-20 bg-white">{" "}</th>
+                {headerGroup.headers.map((header, headerIndex) => { 
                   const isHighlightedFilter = isColumnHighlightedFilter(header.column.id)
                   const isHighlightedSort = isColumnHighlightedSort(header.column.id);
                   const isHighlightedSearch = isColumnHighlightedSearch(header.column.id);
@@ -667,10 +667,18 @@ const tableRenderKey = useMemo(() =>
                   return (
                     <th 
                       key={header.id} 
-                      className={`relative group border-r border-b border-gray-300 px-4 py-2 ${getBgColor()}`}
+                      className={`relative group border-b border-gray-300 px-4 py-2 hover:bg-gray-50 ${getBgColor()}  ${
+                          headerIndex === 0 ? "sticky left-25 z-20 bg-white after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300" : "border-r"
+                        }`}
                       style={{ width: header.getSize() }}
                     >
-                      <div className="text-left text-sm font-medium text-black truncate whitespace-nowrap overflow-hidden text-ellipsis">
+                      <div 
+                        className={`text-left text-sm font-medium text-black truncate`}
+                        style={{ 
+                          maxWidth: `${header.getSize() -34}px`,
+                          minWidth: 0
+                        }}
+                      >
                         {flexRender(header.column.columnDef.header, header.getContext())}
                       </div>
                       {header.column.getCanResize() && (
@@ -708,7 +716,7 @@ const tableRenderKey = useMemo(() =>
                   }}
                 >
                   <th 
-                    className={`text-xs font-normal text-gray-500 w-25 pr-6 py-2 border-b border-gray-300 ${
+                    className={`sticky left-0 text-xs font-normal text-gray-500 w-25 pr-6 py-2 border-b border-gray-300 z-20 bg-white ${
                       isFirstCellHighlighted ? 'bg-yellow-100' : ''
                     }`}
                   >
@@ -740,8 +748,10 @@ const tableRenderKey = useMemo(() =>
                           if (!currentCell) return;
                           handleCellNavigation(e, currentCell);
                         }}
-                        className={`border-r border-b border-gray-300 px-4 text-sm text-gray-800 ${getBgColor()} ${
+                        className={`border-b border-gray-300 px-4 text-sm text-gray-800 ${getBgColor()} ${
                           isCurrent ? "shadow-[inset_0_0_0_1px_rgb(59_130_246)]" : ""
+                        } ${
+                          colIndex == 0 ? "sticky left-25 z-20 bg-white after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300" : "border-r"
                         }`}
                         style={{ 
                           width: cell.column.getSize(), 
@@ -758,13 +768,13 @@ const tableRenderKey = useMemo(() =>
             )})}
           </tbody>
           <tfoot>
-            <tr>
+            <tr className="hover:bg-gray-100  hover:cursor-pointer">
               <td 
-                className="border-r border-b border-gray-300 hover:bg-gray-100" 
-                colSpan={1+table.getVisibleLeafColumns().length}
+                className="sticky left-0 border-b border-gray-300 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300"
+                colSpan={2}
               >
                 <button 
-                  className="py-3 pl-8 w-full h-full focus:ring-0 focus:outline-none hover:cursor-pointer"
+                  className="py-3 pl-8 w-full h-full focus:ring-0 focus:outline-none"
                   onClick={handleAddRowMutation}
                   disabled={addRowMutation.isPending}
                 >
@@ -772,10 +782,31 @@ const tableRenderKey = useMemo(() =>
                 </button>
                 
               </td>
+              <td 
+                className="sticky left-0 border-r border-b border-gray-300 " 
+                colSpan={table.getVisibleLeafColumns().length-1}
+              />
             </tr>
           </tfoot>
+          
         </table>
+
       </div>
+      <div className="absolute left-86 bottom-7 h-10 w-32 rounded-3xl z-20 bg-white border border-gray-200 flex items-center">
+        <div className="flex items-center justify-center h-full w-11 rounded-full rounded-r-none hover:bg-gray-200 hover:cursor-pointer">
+          <PlusIcon className="ml-2 mr-1 text-gray-700" size={18}/>
+
+        </div>
+        <div className="h-full border-r border-gray-200" />
+          
+        <div className="text-[12px] flex items-center h-full w-21 gap-2 rounded-full rounded-l-none hover:bg-gray-200 hover:cursor-pointer">
+          <WandSparkles className="ml-4" size={14} />
+          Add...
+        </div>
+      </div>
+      <div className="absolute left-84 right-0 bottom-0 h-8 bg-white border-t border border-gray-200 text-[11px] px-2 py-1">
+        {rowData.length} record{rowData.length>1 ? "s": ""}
+      </div>  
     </div>
   );
 }
