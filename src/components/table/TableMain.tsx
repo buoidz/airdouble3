@@ -250,6 +250,7 @@ export function TableMain({baseId}: {baseId: string}) {
           columnVisibility={columnVisibility}
           setColumnVisibility={setColumnVisibility}
           isViewReady={isViewReady}
+          isAdding100k={isAdding100k}
         />
       </div>
     </div>

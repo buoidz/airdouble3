@@ -335,6 +335,7 @@ type TableContentProps = {
   columnVisibility: VisibilityState,
   setColumnVisibility: React.Dispatch<React.SetStateAction<VisibilityState>>;
   isViewReady: boolean,
+  isAdding100k: boolean
 }
 
 
@@ -350,6 +351,7 @@ export function TableContent({
   columnVisibility,
   setColumnVisibility,
   isViewReady,
+  isAdding100k,
 }: TableContentProps) {
   const utils = api.useUtils();
 
@@ -622,9 +624,14 @@ const tableRenderKey = useMemo(() =>
 );
 
   
-  if(colLoading || rowLoading || isFetching){
+  if(colLoading || rowLoading){
     return <LoadingPage />
   }
+  
+  if (isFetching && isAdding100k){
+    return <LoadingPage />
+  }
+
   if(!rowData || !colData || colData.length === 0){
     return <div></div>
   }
