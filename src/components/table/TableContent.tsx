@@ -640,7 +640,7 @@ const tableRenderKey = useMemo(() =>
 
   return (
     <div className="w-full">
-      <div ref={parentRef} className="relative w-full h-full overflow-y-auto bg-gray-50">
+      <div ref={parentRef} className="relative w-full h-full overflow-y-auto">
         <table ref={tableRef} key={tableRenderKey} className="border-collapse bg-white" style={{ width: 'max-content', height: `${virtualizer.getTotalSize()}px`}}>
           <thead className="
             sticky top-0 bg-white z-10
@@ -749,7 +749,7 @@ const tableRenderKey = useMemo(() =>
                           handleCellNavigation(e, currentCell);
                         }}
                         className={`border-b border-gray-300 px-4 text-sm text-gray-800 ${getBgColor()} ${
-                          isCurrent ? "shadow-[inset_0_0_0_1px_rgb(59_130_246)]" : ""
+                          isCurrent ? "shadow-[inset_0_0_0_2px_rgb(59_130_246)]" : ""
                         } ${
                           colIndex == 0 ? "sticky left-25 z-20 bg-white after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300" : "border-r"
                         }`}
