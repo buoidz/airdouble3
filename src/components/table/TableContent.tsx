@@ -57,10 +57,6 @@ function EditableCell({
   
   // Use pending change value if it exists, otherwise use initial value
   const displayValue = pendingChange ? pendingChange.value : initialValue;
-  if (displayValue && pendingChange) {
-    console.log("inside editable cell")
-    console.log(pendingChange.value);
-  }
   
 
   const [value, setValue] = useState(displayValue);
@@ -560,11 +556,6 @@ export function TableContent({
       row.cells.some(cell => cell.columnId === columnId && cell.containSearchTerm)
     );
   };
-
-  useEffect(() => {
-    console.log("pending changes updated:");
-    console.log(pendingChanges);
-  }, [pendingChanges]);
 
   const handleCellNavigation = (e: React.KeyboardEvent, currentCell: {row: number; col: number}) => {
     const { row, col } = currentCell;
