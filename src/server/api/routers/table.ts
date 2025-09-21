@@ -535,7 +535,7 @@ export const tableRouter = createTRPCRouter({
       filterCondition: z.string(),
       sorts: z.array(sortSchema).default([]),
       search: z.string().optional(),
-      limit: z.number().min(1).max(500000).default(500000),
+      limit: z.number().min(1).max(500000).default(1000),
       cursor: z.number().nullish(),
     }))
     .query(async ({ ctx, input }) => {

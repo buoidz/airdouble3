@@ -394,6 +394,7 @@ export function TableContent({
       filterCondition: filterCondition,
       sorts: sortConfig,
       search: searchTerm,
+      limit: 1000
     },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
@@ -497,7 +498,7 @@ export function TableContent({
     count: rows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 34,
-    overscan: 20,
+    overscan: 50,
   })
 
 
@@ -628,9 +629,9 @@ const tableRenderKey = useMemo(() =>
     return <LoadingPage />
   }
   
-  if (isFetching && isAdding100k){
-    return <LoadingPage />
-  }
+  // if (isFetching && isAdding100k){
+  //   return <LoadingPage />
+  // }
 
   if(!rowData || !colData || colData.length === 0){
     return <div></div>
@@ -640,7 +641,7 @@ const tableRenderKey = useMemo(() =>
 
   return (
     <div className="w-full">
-      <div ref={parentRef} className="relative w-full h-full overflow-y-auto">
+      <div ref={parentRef} className="relative w-full h-full overflow-y-auto pb-40 pr-20">
         <table ref={tableRef} key={tableRenderKey} className="border-collapse bg-white" style={{ width: 'max-content', height: `${virtualizer.getTotalSize()}px`}}>
           <thead className="
             sticky top-0 bg-white z-10
@@ -768,6 +769,28 @@ const tableRenderKey = useMemo(() =>
             )})}
           </tbody>
           <tfoot>
+            {isFetchingNextPage && 
+            <tr className="hover:bg-gray-100">
+              <td 
+                className="sticky left-0 border-b border-gray-300 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300"
+                colSpan={2}
+              >
+                <div className="py-3 pl-8 w-full h-full focus:ring-0 focus:outline-none">
+                  <LoadingSpinner size={12}/>
+                </div>
+
+              </td>
+              {table.getVisibleLeafColumns()
+                .slice(0, table.getVisibleLeafColumns().length - 1)
+                .map((col, i) => (
+                  <td
+                    key={col.id}
+                    className="border-r border-b border-gray-300"
+                  >
+                  </td>
+              ))}
+            </tr>
+            }
             <tr className="hover:bg-gray-100  hover:cursor-pointer">
               <td 
                 className="sticky left-0 border-b border-gray-300 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300"
@@ -804,9 +827,9 @@ const tableRenderKey = useMemo(() =>
           Add...
         </div>
       </div>
-      <div className="absolute left-84 right-0 bottom-0 h-8 bg-white border-t border border-gray-200 text-[11px] px-2 py-1">
+      {/* <div className="absolute left-84 right-0 bottom-0 h-8 bg-white border-t border border-gray-200 text-[11px] px-2 py-1">
         {rowData.length} record{rowData.length>1 ? "s": ""}
-      </div>  
+      </div>   */}
     </div>
   );
 }
