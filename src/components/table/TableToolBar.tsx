@@ -33,7 +33,7 @@ function Add100KMenu({tableId, setIsAdding100k}: {tableId: string, setIsAdding10
 
   return (
     <button 
-      className="p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 hover:cursor-pointer focus:ring-0 focus:outline-none"
+      className="p-2 rounded-sm flex flex-row items-center gap-2 whitespace-nowrap flex-nowrap hover:bg-gray-100 hover:cursor-pointer focus:ring-0 focus:outline-none"
       onClick={handleAddRows}
       disabled={addRowsMutation.isPending}
     >
@@ -100,7 +100,7 @@ function HideFieldsMenu({
   return (
     <Menu>
       <MenuButton 
-        className={`p-2 rounded-sm flex flex-row border-2 border-white items-center gap-2 focus:ring-0 focus:outline-none ${
+        className={`p-2 rounded-sm flex flex-row border-2 border-white items-center gap-2 whitespace-nowrap flex-nowrap focus:ring-0 focus:outline-none ${
           numHiddenColumn === 0 ? "hover:bg-gray-100" : "bg-blue-100 hover:border-gray-300"
         } ${isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "}`}
         disabled={isAdding100k}
@@ -253,7 +253,7 @@ function FilterMenu({
   return (
     <Menu>
       <MenuButton 
-        className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white focus:ring-0 focus:outline-none ${
+        className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 whitespace-nowrap flex-nowrap border-2 border-white focus:ring-0 focus:outline-none ${
           filterConfig.length > 0 ? 'bg-green-200  hover:border-gray-300' : 'hover:bg-gray-100'
         } ${isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "}`}
         disabled={isAdding100k}
@@ -420,7 +420,7 @@ function SortMenu({
     <>
       <Menu>
         <MenuButton 
-          className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 border-2 border-white focus:ring-0 focus:outline-none ${
+          className={`p-2 rounded-sm flex flex-row text-xs items-center gap-2 whitespace-nowrap flex-nowrap border-2 border-white focus:ring-0 focus:outline-none ${
             sortConfig.length > 0 ? 'bg-red-100  hover:border-gray-300' : 'hover:bg-gray-100'
           } ${isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "}`}
           disabled={isAdding100k}
@@ -634,14 +634,14 @@ export function TableToolBar({
   return (
     <div className="h-12 flex flex-row justify-between items-center border-b border-gray-300 bg-white  sticky top-22 z-50">
 
-      <div className="p-5 flex flex-row items-center">
+      <div className="px-5 flex flex-row items-center">
         <button 
           className={`p-2 rounded-md hover:bg-gray-100 ${
             isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
           }`}>
           <MenuIcon size={16} />
         </button>
-        <button className={`m-2 p-1 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 ${
+        <button className={`m-2 p-1 rounded-sm flex flex-row items-center gap-2 whitespace-nowrap flex-nowrap hover:bg-gray-100 ${
             isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
           }`}>
           <Table2 className="text-blue-500" size={16} />
@@ -650,7 +650,7 @@ export function TableToolBar({
         </button>
       </div>
 
-      <div className="p-2 flex flex-row items-center text-gray-500 gap-3">
+      <div className="p-2 flex flex-row items-center text-gray-500 gap-3 overflow-x-auto " style={{ scrollbarWidth: 'none' }}>
         <Add100KMenu tableId={tableId} setIsAdding100k={setIsAdding100k}/>
         <HideFieldsMenu
           columns={columns}

@@ -73,9 +73,13 @@ function EditableCell({
       setValue(initialValue);
     },
     onSettled: () => {
-      setPendingChanges(prev => 
-        prev.filter(change => !(change.rowId === rowId && change.columnId === columnId))
-      );
+      setTimeout(() => {
+        setPendingChanges(prev =>
+          prev.filter(
+            change => !(change.rowId === rowId && change.columnId === columnId)
+          )
+        );
+      }, 10000);
     }
   });
 
@@ -394,7 +398,7 @@ export function TableContent({
       filterCondition: filterCondition,
       sorts: sortConfig,
       search: searchTerm,
-      limit: 1000
+      limit: 500
     },
     {
       getNextPageParam: (lastPage) => lastPage.nextCursor,
@@ -498,7 +502,7 @@ export function TableContent({
     count: rows.length,
     getScrollElement: () => parentRef.current,
     estimateSize: () => 34,
-    overscan: 50,
+    overscan: 20,
   })
 
 
@@ -507,7 +511,7 @@ export function TableContent({
     
     if (
       lastItem &&
-      lastItem.index >= rows.length - 500 &&
+      lastItem.index >= rows.length - 200 &&
       hasNextPage &&
       !isFetchingNextPage &&
       rows.length > 0
@@ -625,7 +629,7 @@ const tableRenderKey = useMemo(() =>
 );
 
   
-  if(colLoading || rowLoading){
+  if(colLoading || rowLoading || !isViewReady){
     return <LoadingPage />
   }
   
@@ -642,7 +646,7 @@ const tableRenderKey = useMemo(() =>
   return (
     <div className="w-full">
       <div ref={parentRef} className="relative w-full h-full overflow-y-auto pb-40 pr-20">
-        <table ref={tableRef} key={tableRenderKey} className="border-collapse bg-white" style={{ width: 'max-content', height: `${virtualizer.getTotalSize()}px`}}>
+        <table ref={tableRef} key={tableRenderKey} className="border-collapse" style={{ width: 'max-content', height: `${virtualizer.getTotalSize()}px`}}>
           <thead className="
             sticky top-0 bg-white z-10
             after:content-[''] 
@@ -668,8 +672,10 @@ const tableRenderKey = useMemo(() =>
                   return (
                     <th 
                       key={header.id} 
-                      className={`relative group border-b border-gray-300 px-4 py-2 hover:bg-gray-50 ${getBgColor()}  ${
-                          headerIndex === 0 ? "sticky left-25 z-20 bg-white after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300" : "border-r"
+                      className={`relative group border-b border-gray-300 px-4 py-2 hover:bg-gray-50 
+                        ${getBgColor() || (headerIndex == 0 ? "bg-white" : "")}  
+                        ${
+                          headerIndex === 0 ? "sticky left-25 z-20 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300" : "border-r"
                         }`}
                       style={{ width: header.getSize() }}
                     >
@@ -730,15 +736,14 @@ const tableRenderKey = useMemo(() =>
                     const isHighlightedSearch = cellData?.containSearchTerm ?? false;
 
                     const isCurrent = currentCell?.row === virtualRow.index && currentCell?.col === colIndex;
-
-
-
+                    
                     const getBgColor = () => {
                       if (isHighlightedSearch) return 'bg-yellow-100';
                       if (isHighlightedSort) return 'bg-red-50';
                       if (isHighlightedFilter) return 'bg-green-50';
                       return '';
                     };
+
                     return (
                       <td 
                         key={cell.id} 
@@ -749,11 +754,11 @@ const tableRenderKey = useMemo(() =>
                           if (!currentCell) return;
                           handleCellNavigation(e, currentCell);
                         }}
-                        className={`border-b border-gray-300 px-4 text-sm text-gray-800 ${getBgColor()} ${
-                          isCurrent ? "shadow-[inset_0_0_0_2px_rgb(59_130_246)]" : ""
-                        } ${
-                          colIndex == 0 ? "sticky left-25 z-20 bg-white after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300" : "border-r"
-                        }`}
+                        className={`border-b border-gray-300 px-4 text-sm text-gray-800 
+                          ${getBgColor() || (colIndex == 0 ? "bg-white" : "")}
+                          ${isCurrent ? "shadow-[inset_0_0_0_2px_rgb(59_130_246)]" : ""} 
+                          ${colIndex == 0 ? "sticky left-25 z-20 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300" : "border-r"}
+                        `}
                         style={{ 
                           width: cell.column.getSize(), 
                           height: `${virtualRow.size}px`,   
@@ -791,13 +796,13 @@ const tableRenderKey = useMemo(() =>
               ))}
             </tr>
             }
-            <tr className="hover:bg-gray-100  hover:cursor-pointer">
+            <tr className="hover:bg-gray-100 hover:cursor-pointer">
               <td 
-                className="sticky left-0 border-b border-gray-300 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300"
+                className="sticky left-0 border-b border-gray-300 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300 after:pointer-events-none "
                 colSpan={2}
               >
                 <button 
-                  className="py-3 pl-8 w-full h-full focus:ring-0 focus:outline-none"
+                  className="py-3 pl-8 w-full h-full focus:ring-0 focus:outline-none cursor-pointer"
                   onClick={handleAddRowMutation}
                   disabled={addRowMutation.isPending}
                 >
@@ -808,7 +813,14 @@ const tableRenderKey = useMemo(() =>
               <td 
                 className="sticky left-0 border-r border-b border-gray-300 " 
                 colSpan={table.getVisibleLeafColumns().length-1}
-              />
+              >
+                <button 
+                  className="w-full h-full focus:ring-0 focus:outline-none cursor-pointer"
+                  onClick={handleAddRowMutation}
+                  disabled={addRowMutation.isPending}
+                >
+                </button>
+              </td>
             </tr>
           </tfoot>
           

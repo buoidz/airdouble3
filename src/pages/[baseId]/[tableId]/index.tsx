@@ -37,7 +37,7 @@ export default function TablePage() {
         <title>{base.name}</title>
         <link rel="icon" href="/airtable.png" />
       </Head>
-      <main className="h-screen flex flex-row pl-14">
+      <main className="antialiased h-screen flex flex-row pl-14">
         <BaseSideBar />
         <div className="flex flex-col w-full">
           <BaseTopBar baseName={base.name} baseId={baseId} />

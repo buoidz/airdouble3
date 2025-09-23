@@ -23,7 +23,7 @@ const Home = () => {
         <title>Airtable</title>
         <link rel="icon" href="/airtable.png" />
       </Head>
-      <main>
+      <main className="antialiased">
         {(isSignedIn) ? (
           <HomeMain />
           ) : ( 
