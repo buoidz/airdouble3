@@ -790,7 +790,7 @@ const tableRenderKey = useMemo(() =>
                 .map((col, i) => (
                   <td
                     key={col.id}
-                    className="border-r border-b border-gray-300"
+                    className="border-r border-b border-gray-300" 
                   >
                   </td>
               ))}
