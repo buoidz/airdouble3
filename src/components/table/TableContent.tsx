@@ -194,7 +194,7 @@ function EditableCell({
                 setValue(newValue);
               }
             }}
-            onBlur={commitChange}
+            onBlur={commitChange} 
             onKeyDown={handleKeyDown}
           />
         </>
