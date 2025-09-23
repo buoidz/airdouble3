@@ -18,7 +18,7 @@ export default function TablePage() {
           <title>Airtable</title>
           <link rel="icon" href="/airtable.png" />
         </Head>
-        <main className="min-h-screen flex flex-row">
+        <main className="antialiased min-h-screen flex flex-row">
           <BaseSideBar />
           <div className="w-full">
             <LoadingPage />
