@@ -675,7 +675,7 @@ const tableRenderKey = useMemo(() =>
                       className={`relative group border-b border-gray-300 px-4 py-2 hover:bg-gray-50 
                         ${getBgColor() || (headerIndex == 0 ? "bg-white" : "")}  
                         ${
-                          headerIndex === 0 ? "sticky left-25 z-20 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300" : "border-r"
+                          headerIndex === 0 ? "sticky left-25 z-20 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300 after:pointer-events-none" : "border-r"
                         }`}
                       style={{ width: header.getSize() }}
                     >
