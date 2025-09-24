@@ -86,7 +86,6 @@ function EditableCell({
   useEffect(() => {
     if (!editing) {
       setValue(displayValue);
-
     }
   }, [displayValue, editing]);
 
@@ -118,6 +117,7 @@ function EditableCell({
 
     const handleClickOutside = (event: MouseEvent) => {
       if (divRef.current && !divRef.current.contains(event.target as Node)) {
+        console.log("Clicked outside, committing change");
         commitChange();
         setEditing(false);
         setIsEditCell(false);
@@ -157,7 +157,7 @@ function EditableCell({
         <div
           ref={divRef}
           tabIndex={0}
-          className="w-full h-full flex items-center focus:outline-none cursor-pointer"
+          className="w-full h-full flex items-center focus:outline-none cursor-pointer select-none"
           onDoubleClick={() => {
             setIsEditCell(true);
             setEditing(true)
@@ -723,11 +723,11 @@ const tableRenderKey = useMemo(() =>
                   }}
                 >
                   <th 
-                    className={`sticky left-0 text-xs font-normal text-gray-500 w-25 pr-6 py-2 border-b border-gray-300 z-20 bg-white ${
+                    className={`sticky left-0 h-full text-xs font-normal text-gray-500 w-25 border-b border-gray-300 z-20 select-none ${
                       isFirstCellHighlighted ? 'bg-yellow-100' : ''
                     }`}
                   >
-                    {virtualRow.index + 1}
+                    <span className="bg-white block h-full w-full pr-6 py-2 ">{virtualRow.index + 1}</span>
                   </th>
                   {row.getVisibleCells().map((cell, colIndex) => {
                     const isHighlightedFilter = isColumnHighlightedFilter(cell.column.id)
@@ -754,19 +754,21 @@ const tableRenderKey = useMemo(() =>
                           if (!currentCell) return;
                           handleCellNavigation(e, currentCell);
                         }}
-                        className={`border-b border-gray-300 px-4 text-sm text-gray-800 
-                          ${getBgColor() || (colIndex == 0 ? "bg-white" : "")}
+                        className={`border-b border-gray-300 text-sm text-gray-800 
+                          ${getBgColor()}
                           ${isCurrent ? "shadow-[inset_0_0_0_2px_rgb(59_130_246)]" : ""} 
-                          ${colIndex == 0 ? "sticky left-25 z-20 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300" : "border-r"}
+                          ${colIndex == 0 ? "sticky left-25 z-20 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300 after:pointer-events-none" : "border-r"}
                         `}
                         style={{ 
                           width: cell.column.getSize(), 
-                          height: `${virtualRow.size}px`,   
+                          height: `${virtualRow.size-0.5}px`,   
                           maxWidth: cell.column.getSize(),
                           minWidth: cell.column.getSize()
                         }}
                       >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        <div className={`block h-full w-full px-4 py-1 ${getBgColor() || (colIndex == 0 ? "bg-white" : "")}`}>
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                        </div>
                       </td>
                     )
                   })}
