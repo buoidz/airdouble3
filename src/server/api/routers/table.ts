@@ -690,7 +690,7 @@ export const tableRouter = createTRPCRouter({
 
     // pagination
     let cursorSQL = "";
-    if (input.cursor && input.cursor.values && input.cursor.values.length >= input.sorts.length) {
+    if (input.cursor?.values && input.cursor?.values?.length >= input.sorts.length) {
       const cursorConditions: string[] = [];
       
       // For each sort level, build the lexicographic condition
@@ -787,7 +787,8 @@ export const tableRouter = createTRPCRouter({
           order: nextItem.order,
           values: input.sorts.map((_, i) => {
             const sortKey = `sort${i}`;
-            return (nextItem as any)[sortKey] ?? null;
+            const val = (nextItem as Record<string, unknown>)[sortKey];
+            return val as string | number | null;
           })
         };
       }
