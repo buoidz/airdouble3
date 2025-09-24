@@ -116,8 +116,8 @@ function EditableCell({
     if (!editing) return;
 
     const handleClickOutside = (event: MouseEvent) => {
+      console.log("Clicked outside, committing change");
       if (divRef.current && !divRef.current.contains(event.target as Node)) {
-        console.log("Clicked outside, committing change");
         commitChange();
         setEditing(false);
         setIsEditCell(false);
@@ -194,7 +194,10 @@ function EditableCell({
                 setValue(newValue);
               }
             }}
-            onBlur={commitChange} 
+            onBlur={() => {
+              commitChange();
+              console.log("Input lost focus, committing change");
+            }} 
             onKeyDown={handleKeyDown}
           />
         </>
@@ -371,8 +374,10 @@ export function TableContent({
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (tableRef.current && !tableRef.current.contains(event.target as Node)) {
-        setIsEditCell(false);
-        setCurrentCell(null);
+        setTimeout(() => {
+          setIsEditCell(false);
+          setCurrentCell(null);
+        }, 100);
       }
     }
 
@@ -754,9 +759,7 @@ const tableRenderKey = useMemo(() =>
                           if (!currentCell) return;
                           handleCellNavigation(e, currentCell);
                         }}
-                        className={`border-b border-gray-300 text-sm text-gray-800 
-                          ${getBgColor()}
-                          ${isCurrent ? "shadow-[inset_0_0_0_2px_rgb(59_130_246)]" : ""} 
+                        className={`border-b border-gray-300 text-sm text-gray-800                           
                           ${colIndex == 0 ? "sticky left-25 z-20 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300 after:pointer-events-none" : "border-r"}
                         `}
                         style={{ 
@@ -766,7 +769,7 @@ const tableRenderKey = useMemo(() =>
                           minWidth: cell.column.getSize()
                         }}
                       >
-                        <div className={`block h-full w-full px-4 py-1 ${getBgColor() || (colIndex == 0 ? "bg-white" : "")}`}>
+                        <div className={`block h-full w-full px-4 py-1 ${isCurrent ? "shadow-[inset_0_0_0_2px_rgb(59_130_246)]" : ""}  ${getBgColor() || (colIndex == 0 ? "bg-white" : "")}`}>
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </div>
                       </td>
