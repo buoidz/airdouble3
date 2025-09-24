@@ -381,7 +381,7 @@ export function TableContent({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
-
+  
 
   const {data: colData, isLoading: colLoading} = api.table.getColumnDataByTableId.useQuery({id: tableId});
   const {

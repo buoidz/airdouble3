@@ -90,7 +90,7 @@ export function HomeContent()  {
                   {base.name.slice(0,2)}
                 </div>
                 <div className="mx-1 flex flex-col gap-1">
-                  <div className="text sm font-semibold">{base.name}</div>
+                  <div className="text-[13px] font-medium">{base.name}</div>
                   <div className="text-xs text-gray-600">Opened {dayjs(base.updatedAt).fromNow()}</div>
                 </div>
               </Link>
@@ -121,7 +121,7 @@ export function HomeContent()  {
 
   return (
     <div className="flex-1 bg-gray-50 overflow-y-auto">
-      <h1 className="py-7 px-12 text-[26px] font-bold">Home</h1>
+      <h1 className="py-7 px-12 text-[27px] font-bold">Home</h1>
       <div className="mx-13 flex flex-row gap-x-4 gap-y-4 mb-4">  
         <div className="w-full h-23 bg-white border border-gray-300 rounded-md hover:shadow hover:cursor-pointer">
           <div className="pt-3 pl-3 flex flex-row gap-1 items-center font-semibold text-[15px]">
@@ -193,14 +193,14 @@ export function HomeContent()  {
 
       {past7Days && past7Days.length > 0 && (
         <>
-          <h2 className="px-13 pb-1 text-xl font-semibold mb-2">Past 7 days</h2>
+          <h2 className="px-13 pb-1 text-sm text-gray-500 font-semibold mb-2">Past 7 days</h2>
           {renderBases(past7Days)}
         </>
       )}
 
       {past30Days && past30Days.length > 0 && (
         <>
-          <h2 className="px-13 pb-1 text-xl font-semibold mb-2">Past 30 days</h2>
+          <h2 className="px-13 pb-1 text-sm text-gray-500 font-semibold mb-2">Past 30 days</h2>
           {renderBases(past30Days)}
         </>
       )}

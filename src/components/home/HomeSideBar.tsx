@@ -24,16 +24,16 @@ export function HomeSideBar() {
 
   return (
     <div className="h-full w-75 border-r-2 border-gray-200 flex flex-col items-center justify-between sticky top-14 z-10">
-      <div className="flex flex-col items-center m-3 gap-1">
+      <div className="flex flex-col items-center m-3 gap-1 font-medium text-[15px]">
         
-        <div className="h-10 w-70 bg-gray-100 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4 hover:cursor-pointer">
-          <div className="flex flex-row items-center gap-2">
+        <div className="h-10 w-70 bg-gray-100 rounded-md hover:bg-gray-100 text-black flex flex-row justify-between items-center px-4 hover:cursor-pointer">
+          <div className="flex flex-row items-center gap-2 ">
             <House size={18} />
             Home
           </div>
         </div>
 
-        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4 hover:cursor-pointer">
+        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black flex flex-row justify-between items-center px-4 hover:cursor-pointer">
           <div className="flex flex-row items-center gap-2">
             <Star size={18} />
             Starred
@@ -43,21 +43,21 @@ export function HomeSideBar() {
           </div>
         </div>
 
-        <div className="h-8 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4 gap-3">
+        <div className="h-8 w-70 rounded-md hover:bg-gray-100 text-black flex flex-row justify-between items-center px-4 gap-3">
           <button className="border border-gray-200 text-gray-400 rounded-xs p-2">
             <Star size={14} />
           </button>
           <span className="text-[11px] text-gray-500 leading-[0.8rem] font-normal">Your starred bases, interfaces, and workspaces will appear here</span>
         </div>
 
-        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4 hover:cursor-pointer">
+        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black flex flex-row justify-between items-center px-4 hover:cursor-pointer">
           <div className="flex flex-row items-center gap-2">
             <SquareArrowOutUpRight size={18} />
             Shared
           </div>
         </div>
 
-        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black font-semibold flex flex-row justify-between items-center px-4 hover:cursor-pointer">
+        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black flex flex-row justify-between items-center px-4 hover:cursor-pointer">
           <div className="flex flex-row items-center gap-2">
             <UsersRound size={18} />
             Workspaces

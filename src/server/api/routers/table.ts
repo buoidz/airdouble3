@@ -440,7 +440,7 @@ export const tableRouter = createTRPCRouter({
     });
     const startOrder = lastRowOrder ? lastRowOrder.order + 1 : 0;
 
-    const totalRows = 100000;
+    const totalRows = 10000;
     const rowBatchSize = 1000; // insert 10k rows at a time
 
     for (let offset = 0; offset < totalRows; offset += rowBatchSize) {
@@ -536,7 +536,10 @@ export const tableRouter = createTRPCRouter({
       sorts: z.array(sortSchema).default([]),
       search: z.string().optional(),
       limit: z.number().min(1).max(500000).default(1000),
-      cursor: z.number().nullish(),
+      cursor: z.object({
+        order: z.number(),
+        values: z.array(z.union([z.string(), z.number(), z.null()])).default([])
+      }).nullish()
     }))
     .query(async ({ ctx, input }) => {
       const currentUser = ctx.currentUser;
@@ -568,11 +571,48 @@ export const tableRouter = createTRPCRouter({
         });
       }   
 
+      let paramIndex = 2; // $1 is tableId
+      const filterParams: (string | number)[] = [input.tableId]; // $1 = tableId
+      // CTE clauses
+      const selectBaseClauses: string[] = ['r.id', 'r."order"'];
+      const joinBaseClauses: string[] = [];
+
+      // Main query clauses
+      const groupByClauses: string[] = ['base.id']
+      const orderByClauses: string[] = [];
+
+      input.sorts.forEach((sort, i) => {
+        const alias = `s${i}`;
+        const colAlias = `sort${i}`
+        const colField = sort.type.startsWith("text") ? "textValue" : "numberValue";
+        const direction = sort.type.endsWith("ASC") ? "ASC" : "DESC";
+
+        selectBaseClauses.push(`
+          ${alias}."${colField}" AS ${colAlias}
+        `);
+
+        joinBaseClauses.push(`
+          LEFT JOIN "Cell" ${alias} ON ${alias}."rowId" = r.id AND ${alias}."columnId" = $${paramIndex++}
+        `);
+
+        filterParams.push(sort.columnId);
+
+        groupByClauses.push(`base."${colAlias}"`);
+
+        orderByClauses.push(`base."${colAlias}" ${direction} NULLS LAST`);
+      })
+
+      groupByClauses.push('base."order"');
+      orderByClauses.push('base."order"');
+
+      const selectBaseSQL = `SELECT ${selectBaseClauses.join(",")}`;
+      const groupBySQL = `GROUP BY ${groupByClauses.join(",")}`;
+      const orderBySQL = `ORDER BY ${orderByClauses.join(",")}`;
+
 
       // filtering
       const filterFragments: string[] = [];
-      const filterParams: (string | number)[] = [input.tableId]; // $1 = tableId
-      let paramIndex = 2;
+      
 
       input.filters.forEach((filter) => {
         let condition = "";
@@ -627,29 +667,6 @@ export const tableRouter = createTRPCRouter({
         ? `AND (${filterFragments.join(` ${input.filterCondition} `)})`
         : "";
       
-      // sorting
-      const joinClauses: string[] = [];
-      const orderByClauses: string[] = [];
-      const groupByClauses: string[] = ['r.id']
-
-      input.sorts.forEach((sort, i) => {
-        const alias = `s${i}`;
-        const colField = sort.type.startsWith("text") ? "textValue" : "numberValue";
-        const direction = sort.type.endsWith("ASC") ? "ASC" : "DESC";
-
-        joinClauses.push(`
-          LEFT JOIN "Cell" ${alias} ON ${alias}."rowId" = r.id AND ${alias}."columnId" = $${paramIndex++}
-        `);
-
-        filterParams.push(sort.columnId);
-        orderByClauses.push(`${alias}."${colField}" ${direction} NULLS LAST`);
-
-        groupByClauses.push(`${alias}."${colField}"`);
-      });
-
-      orderByClauses.push(`r.order`);
-      const orderBySQL = orderByClauses.length > 0 ? `ORDER BY ${orderByClauses.join(", ")}` : "";
-      const groupBySQL = `GROUP BY ${groupByClauses.join(", ")}`;
 
 
     // searching
@@ -672,18 +689,64 @@ export const tableRouter = createTRPCRouter({
     }
 
     // pagination
-    let cursorClause = "";
-    if (input.cursor) {
-      filterParams.push(input.cursor);
-      cursorClause = `AND r.order > $${filterParams.length}`;
+    let cursorSQL = "";
+    if (input.cursor && input.cursor.values && input.cursor.values.length >= input.sorts.length) {
+      const cursorConditions: string[] = [];
+      
+      // For each sort level, build the lexicographic condition
+      for (let i = 0; i <= input.sorts.length; i++) {
+        const conditions: string[] = [];
+        
+        // All previous sorts must be equal
+        for (let j = 0; j < i; j++) {
+          const cursorValue = input.cursor.values[j];
+          if (cursorValue !== null && cursorValue !== undefined) {
+            conditions.push(`s${j}."${input.sorts[j]?.type.startsWith("text") ? "textValue" : "numberValue"}" = $${paramIndex++}`);
+            filterParams.push(cursorValue);
+          }
+        }
+        
+        // Current sort must be greater/less than cursor
+        if (i < input.sorts.length) {
+          const cursorValue = input.cursor.values[i];
+          if (cursorValue !== null && cursorValue !== undefined && input.sorts) {
+            const direction = input.sorts[i]?.type.endsWith("ASC") ? ">" : "<";
+            const colField = input.sorts[i]?.type.startsWith("text") ? "textValue" : "numberValue";
+            conditions.push(`s${i}."${colField}" ${direction} $${paramIndex++}`);
+            filterParams.push(cursorValue);
+          }
+        } else {
+          // Tiebreaker with order
+          conditions.push(`r."order" >= $${paramIndex++}`);
+          filterParams.push(input.cursor.order);
+        }
+        
+        if (conditions.length > 0) {
+          cursorConditions.push(`(${conditions.join(" AND ")})`);
+        }
+      }
+      
+      if (cursorConditions.length > 0) {
+        cursorSQL = `AND (${cursorConditions.join(" OR ")})`;
+      }
     }
+
 
     // limit
     filterParams.push(input.limit + 1);  // +1 to check if there’s a next page
     const limitSQL = `LIMIT $${filterParams.length}`;
 
     const sql = `
-      SELECT r.*,
+      WITH Base AS (
+        ${selectBaseSQL}
+        FROM "rows" r
+        ${joinBaseClauses.join("\n")}
+        WHERE r."tableId" = $1
+        ${cursorSQL}
+        ${filterClause}
+        ${searchClause}
+      )
+      SELECT base.*,
             COALESCE(
               json_agg(
                 json_build_object(
@@ -703,13 +766,8 @@ export const tableRouter = createTRPCRouter({
                 )
               ) FILTER (WHERE c.id IS NOT NULL), '[]'
             ) AS cells
-      FROM "rows" r
-      LEFT JOIN "Cell" c ON c."rowId" = r.id
-      ${joinClauses.join("\n")}
-      WHERE r."tableId" = $1
-      ${cursorClause}
-      ${filterClause}
-      ${searchClause}
+      FROM base
+      LEFT JOIN "Cell" c ON c."rowId" = base.id
       ${groupBySQL}
       ${orderBySQL}
       ${limitSQL}
@@ -718,11 +776,22 @@ export const tableRouter = createTRPCRouter({
 
     const rows = await ctx.db.$queryRawUnsafe<RowDataRaw[]>(sql, ...filterParams);
 
-    let nextCursor: number | null = null;
+    console.log("Params:\n", filterParams);
+
+
+    let nextCursor: { order: number; values?: (string | number | null)[] } | null = null;
     if (rows.length > input.limit) {
-      const nextItem = rows.pop(); // remove the extra row
-      nextCursor = nextItem?.order ?? null;
-    }
+      const nextItem = rows.pop(); 
+      if (nextItem) {
+        nextCursor = {
+          order: nextItem.order,
+          values: input.sorts.map((_, i) => {
+            const sortKey = `sort${i}`;
+            return (nextItem as any)[sortKey] ?? null;
+          })
+        };
+      }
+    };
 
     const cleanRows: RowDataRaw[] = rows.map(row => ({
       ...row,
@@ -740,6 +809,222 @@ export const tableRouter = createTRPCRouter({
       nextCursor
     };
   })
+
+  // getRowDataByOperations: publicProcedure
+  //   .input(z.object({
+  //     tableId: z.string(),
+  //     filters: z.array(filterSchema).default([]),
+  //     filterCondition: z.string(),
+  //     sorts: z.array(sortSchema).default([]),
+  //     search: z.string().optional(),
+  //     limit: z.number().min(1).max(500000).default(1000),
+  //     cursor: z.number().nullish(),
+  //   }))
+  //   .query(async ({ ctx, input }) => {
+  //     const currentUser = ctx.currentUser;
+  //     if (!currentUser) {
+  //       throw new TRPCError({
+  //         code: "UNAUTHORIZED",
+  //         message: "You must be logged in to update a cell.",
+  //       });
+  //     }
+
+  //     const table = await ctx.db.table.findUnique({
+  //       where: { id: input.tableId },
+  //       include: { 
+  //         columns: {
+  //           orderBy: { order: 'asc' }
+  //         }
+  //       }
+  //     });
+  //     if (!table) {
+  //       throw new TRPCError({
+  //         code: "NOT_FOUND",
+  //         message: "Table not found.",
+  //       });
+  //     }
+  //     if (table.ownerId !== currentUser.id) {
+  //       throw new TRPCError({
+  //         code: "FORBIDDEN",
+  //         message: "You do not have permission to update this table.",
+  //       });
+  //     }   
+
+
+  //     // filtering
+  //     const filterFragments: string[] = [];
+  //     const filterParams: (string | number)[] = [input.tableId]; // $1 = tableId
+  //     let paramIndex = 2;
+
+  //     input.filters.forEach((filter) => {
+  //       let condition = "";
+  //       if (filter.value === undefined || filter.value === null) return;
+        
+  //       switch (filter.type) {
+  //         case "numEqualTo":
+  //           condition = `"numberValue" = $${paramIndex++}`;
+  //           filterParams.push(Number(filter.value));
+  //           break;
+  //         case "numGreaterThan":
+  //           condition = `"numberValue" > $${paramIndex++}`;
+  //           filterParams.push(Number(filter.value));
+  //           break;
+  //         case "numSmallerThan":
+  //           condition = `"numberValue" < $${paramIndex++}`;
+  //           filterParams.push(Number(filter.value));
+  //           break;
+  //         case "textContains":
+  //           condition = `"textValue" ILIKE $${paramIndex++}`;
+  //           filterParams.push(`%${filter.value}%`);
+  //           break;
+  //         case "textEqualTo":
+  //           condition = `"textValue" = $${paramIndex++}`;
+  //           filterParams.push(filter.value);
+  //           break;
+  //         case "textIsEmpty":
+  //           condition = `("textValue" = '' OR "textValue" IS NULL)`;
+  //           break;
+  //         case "textNotContains":
+  //           condition = `"textValue" NOT ILIKE $${paramIndex++}`;
+  //           filterParams.push(`%${filter.value}%`);
+  //           break;
+  //         case "textNotEmpty":
+  //           condition = `("textValue" <> '' AND "textValue" IS NOT NULL)`;
+  //           break;
+  //       }
+
+  //       filterFragments.push(`
+  //         EXISTS (
+  //           SELECT 1 FROM "Cell" f
+  //           WHERE f."rowId" = r.id
+  //             AND f."columnId" = $${paramIndex++}
+  //             AND ${condition}
+  //         )
+  //       `);
+
+  //       filterParams.push(filter.columnId);
+  //     });
+
+  //     const filterClause = filterFragments.length > 0
+  //       ? `AND (${filterFragments.join(` ${input.filterCondition} `)})`
+  //       : "";
+      
+  //     // sorting
+  //     const joinClauses: string[] = [];
+  //     const orderByClauses: string[] = [];
+  //     const groupByClauses: string[] = ['r.id']
+
+  //     input.sorts.forEach((sort, i) => {
+  //       const alias = `s${i}`;
+  //       const colField = sort.type.startsWith("text") ? "textValue" : "numberValue";
+  //       const direction = sort.type.endsWith("ASC") ? "ASC" : "DESC";
+
+  //       joinClauses.push(`
+  //         LEFT JOIN "Cell" ${alias} ON ${alias}."rowId" = r.id AND ${alias}."columnId" = $${paramIndex++}
+  //       `);
+
+  //       filterParams.push(sort.columnId);
+  //       orderByClauses.push(`${alias}."${colField}" ${direction} NULLS LAST`);
+
+  //       // groupByClauses.push(`${alias}."${colField}"`);
+  //     });
+
+  //     orderByClauses.push(`r.order`);
+  //     const orderBySQL = orderByClauses.length > 0 ? `ORDER BY ${orderByClauses.join(", ")}` : "";
+  //     const groupBySQL = `GROUP BY ${groupByClauses.join(", ")}`;
+
+
+  //   // searching
+  //   let searchClause = "";
+  //   let searchParamIndex: number | null = null;
+  //   if (input.search) {
+  //     const searchParam = `%${input.search}%`;
+  //     filterParams.push(searchParam);
+  //     searchParamIndex = filterParams.length;
+  //     searchClause = `
+  //       AND EXISTS (
+  //         SELECT 1 FROM "Cell" sc
+  //         WHERE sc."rowId" = r.id
+  //           AND (
+  //             sc."textValue" ILIKE $${searchParamIndex}
+  //             OR CAST(sc."numberValue" AS TEXT) ILIKE $${searchParamIndex}
+  //           )
+  //       )
+  //     `;
+  //   }
+
+  //   // pagination
+  //   let cursorClause = "";
+  //   if (input.cursor) {
+  //     filterParams.push(input.cursor);
+  //     cursorClause = `AND r.order > $${filterParams.length}`;
+  //   }
+
+  //   // limit
+  //   filterParams.push(input.limit + 1);  // +1 to check if there’s a next page
+  //   const limitSQL = `LIMIT $${filterParams.length}`;
+
+  //   const sql = `
+  //     SELECT r.*,
+  //           COALESCE(
+  //             json_agg(
+  //               json_build_object(
+  //                 'id', c.id,
+  //                 'columnId', c."columnId",
+  //                 'textValue', c."textValue",
+  //                 'numberValue', c."numberValue",
+  //                 'containSearchTerm',
+  //                   ${searchParamIndex
+  //                     ? `CASE
+  //                         WHEN c."textValue" ILIKE $${searchParamIndex}
+  //                           OR CAST(c."numberValue" AS TEXT) ILIKE $${searchParamIndex}
+  //                         THEN true
+  //                         ELSE false
+  //                       END`
+  //                     : "false"}
+  //               )
+  //             ) FILTER (WHERE c.id IS NOT NULL), '[]'
+  //           ) AS cells
+  //     FROM "rows" r
+  //     LEFT JOIN "Cell" c ON c."rowId" = r.id
+  //     ${joinClauses.join("\n")}
+  //     WHERE r."tableId" = $1
+  //     ${cursorClause}
+  //     ${filterClause}
+  //     ${searchClause}
+  //     ${groupBySQL}
+  //     ${orderBySQL}
+  //     ${limitSQL}
+
+  //   `;
+
+  //   const rows = await ctx.db.$queryRawUnsafe<RowDataRaw[]>(sql, ...filterParams);
+
+  //   console.log("Params:\n", filterParams);
+
+
+  //   let nextCursor: number | null = null;
+  //   if (rows.length > input.limit) {
+  //     const nextItem = rows.pop(); // remove the extra row
+  //     nextCursor = nextItem?.order ?? null;
+  //   }
+
+  //   const cleanRows: RowDataRaw[] = rows.map(row => ({
+  //     ...row,
+  //     cells: row.cells.map((cell: { id: string; columnId: string; textValue: string | null; numberValue: number | null; containSearchTerm: true | false}) => ({
+  //       id: cell.id,
+  //       columnId: cell.columnId,
+  //       textValue: cell.textValue,
+  //       numberValue: cell.numberValue,
+  //       containSearchTerm: cell.containSearchTerm,
+  //     }))
+  //   }))
+
+  //   return {
+  //     cleanRows,
+  //     nextCursor
+  //   };
+  // })
 
 
 })

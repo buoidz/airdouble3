@@ -242,7 +242,7 @@ export function TableListBar({tables, baseId, selectedTableId, setSelectedTableI
       />
       
       <div className="h-full w-full px-4 border-b border-gray-300 flex flex-row justify-between items-center">
-        <div className="flex flex-row justify-between items-center gap-6">
+        <div className="h-full flex flex-row justify-between items-center gap-6">
           <ChevronDown 
             className={`text-black ${
               isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
@@ -250,7 +250,7 @@ export function TableListBar({tables, baseId, selectedTableId, setSelectedTableI
             size={16} 
           />
           <button 
-            className={`text-xs font-normal text-gray-700 flex flex-row justify-between items-center gap-2 ${
+            className={`h-full text-xs font-normal text-gray-700 flex flex-row justify-between items-center gap-2 ${
               isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
             }`}
             onClick={handleAddTable}

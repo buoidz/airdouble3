@@ -219,7 +219,6 @@ function FilterMenu({
       }]);
     }
   };
-
   const updateFilter = (index: number, field: keyof FilterConfig, val: string) => {
     setFilterConfig((prev) => {
       const newFilters = [...prev];
@@ -229,7 +228,16 @@ function FilterMenu({
       if (field === "type") {
         newFilters[index].type = val as FilterType;
       } else if (field === "columnId") {
-        newFilters[index].columnId = val;
+        const alreadyUsed = newFilters.some(
+          (f, i) => i !== index && f.columnId === val
+        );
+        if (!alreadyUsed){
+          newFilters[index].columnId = val;
+
+          const newColumnType = columns?.find((col) => col.id === val)?.type;
+
+          newFilters[index].type = newColumnType === "TEXT" ? 'textContains' : 'numEqualTo'
+        }
       } else if (field === "value") {
         newFilters[index].value = val;
       }
@@ -306,7 +314,6 @@ function FilterMenu({
                 onChange={(e) => updateFilter(index, "columnId", e.target.value)}
                 className="text-xs border-l border-t border-b border-gray-200 rounded-l p-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none hover:cursor-pointer"
               >
-                <option value="">Select column</option>
                 {columns?.map((col) => (
                   <option key={col.id} value={col.id}>{col.name}</option>
                 ))}
@@ -398,7 +405,15 @@ function SortMenu({
       if (field === "type") {
         newSorts[index].type = val as SortType;
       } else if (field === "columnId") {
-        newSorts[index].columnId = val;
+        const alreadyUsed = newSorts.some(
+          (f, i) => i !== index && f.columnId === val
+        );
+        if (!alreadyUsed){
+          newSorts[index].columnId = val;
+
+          const newColumnType = columns?.find((col) => val === col.id)?.type;
+          newSorts[index].type = newColumnType === "TEXT" ? 'textASC' : 'numASC'
+        }
       }
 
       return newSorts;
@@ -476,7 +491,6 @@ function SortMenu({
                       onChange={(e) => updateSort(index, "columnId", e.target.value)}
                       className="text-xs border border-gray-200 rounded pl-2 pr-40 py-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none"
                     >
-                      <option value="">Select column</option>
                       {columns?.map((col) => (
                         <option key={col.id} value={col.id}>{col.name}</option>
                       ))}

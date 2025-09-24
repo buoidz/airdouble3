@@ -57,7 +57,7 @@ export function TableViewSideBar({
           >
           </input>
         </div>
-        <div className="flex flex-col teims-center">
+        <div className="flex flex-col">
           {views.map((view) => (
             <button 
               key={view.id}
@@ -69,7 +69,7 @@ export function TableViewSideBar({
               onClick={() => handleSwitchView(view)}
             >
               <Table2 className="text-blue-500" size={16} />
-              <span className="text-sm font-semibold">{view.name}</span>
+              <span className="text-[13px] font-medium">{view.name}</span>
             </button>
           ))}
         </div>
