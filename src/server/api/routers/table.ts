@@ -403,7 +403,11 @@ export const tableRouter = createTRPCRouter({
 
       const table = await ctx.db.table.findUnique({
         where: { id: input.tableId },
+        include: {
+          columns: true,
+        },
       });
+
       if (!table) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -417,57 +421,63 @@ export const tableRouter = createTRPCRouter({
         });
       }  
       
-      const columns = await ctx.db.column.findMany({
-        where: { tableId: input.tableId }
-      })
-
-      if (!columns) {
+      if (!table.columns.length) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Table columns not found.",
-        })
+        });
       }
 
-    const lastRowId = await ctx.db.row.findFirst({
-      orderBy: { id: "desc" },
-    });
-    const startId = lastRowId ? lastRowId.id + 1 : 0;
+      const lastRow = await ctx.db.row.findFirst({
+        where: { tableId: input.tableId },
+        orderBy: { id: "desc" },
+      });
 
+      const startId = lastRow ? lastRow.id + 1 : 1;
+      const startOrder = lastRow ? lastRow.order + 1 : 0;
 
-    const lastRowOrder = await ctx.db.row.findFirst({
-      where: { tableId: input.tableId },
-      orderBy: { id: "desc" },
-    });
-    const startOrder = lastRowOrder ? lastRowOrder.order + 1 : 0;
+      const totalRows = 100000;
+      const rowBatchSize = 10000; // insert 10k rows at a time
 
-    const totalRows = 10000;
-    const rowBatchSize = 1000; // insert 10k rows at a time
-
-    for (let offset = 0; offset < totalRows; offset += rowBatchSize) {
-      const batchSize = Math.min(rowBatchSize, totalRows - offset);
-
-      const rows = Array.from({ length: batchSize }, (_, i) => ({
-        id: startId + offset + i,
+      const allRowsData = Array.from({ length: totalRows }, (_, i) => ({
+        id: startId + i,
         tableId: input.tableId,
-        order: startOrder + offset + i,
+        order: startOrder + i,
       }));
 
-      await ctx.db.row.createMany({ data: rows });
-
-      const cells = [];
-      for (const row of rows) {
-        for (const column of columns) {
-          cells.push({
-            rowId: row.id,
+      const allCellsData = [];
+      for (let i = 0; i < totalRows; i++) {
+        for (const column of table.columns) {
+          allCellsData.push({
+            rowId: startId + i,
             columnId: column.id,
-            textValue: column.type === ColumnType.TEXT ? faker.lorem.words({min: 1, max: 3}) : null,
-            numberValue: column.type === ColumnType.NUMBER ? faker.number.int({ max: 1000000000000}) : null,
+            textValue: column.type === ColumnType.TEXT ? faker.lorem.words({ min: 1, max: 3 }) : null,
+            numberValue: column.type === ColumnType.NUMBER ? faker.number.int({ max: 1000000000000 }) : null,
           });
         }
       }
 
-      await ctx.db.cell.createMany({ data: cells });
-    }
+      for (let offset = 0; offset < totalRows; offset += rowBatchSize) {
+        const batchSize = Math.min(rowBatchSize, totalRows - offset);
+        
+        const rowsBatch = allRowsData.slice(offset, offset + batchSize);
+        const cellsBatch = allCellsData.slice(
+          offset * table.columns.length,
+          (offset + batchSize) * table.columns.length
+        );
+
+        await ctx.db.$transaction([
+          ctx.db.row.createMany({ 
+            data: rowsBatch,
+            skipDuplicates: true,
+          }),
+          ctx.db.cell.createMany({ 
+            data: cellsBatch,
+            skipDuplicates: true,
+          }),
+        ]);
+      }
+
     }),
 
 

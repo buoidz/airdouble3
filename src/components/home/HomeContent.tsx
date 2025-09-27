@@ -122,8 +122,8 @@ export function HomeContent()  {
   return (
     <div className="flex-1 bg-gray-50 overflow-y-auto">
       <h1 className="py-7 px-12 text-[27px] font-bold">Home</h1>
-      <div className="mx-13 flex flex-row gap-x-4 gap-y-4 mb-4">  
-        <div className="w-full h-23 bg-white border border-gray-300 rounded-md hover:shadow hover:cursor-pointer">
+      <div className="flex-1 mx-13 flex flex-wrap gap-x-4 gap-y-4 mb-4 ">  
+        <div className="flex-1 pt-0.5 pl-0.5 pr-1 pb-2 bg-white border border-gray-300 rounded-md hover:shadow hover:cursor-pointer min-w-[200px]">
           <div className="pt-3 pl-3 flex flex-row gap-1 items-center font-semibold text-[15px]">
             <Image 
               src="/omni.jpg"
@@ -134,34 +134,34 @@ export function HomeContent()  {
             />
             Start with Omni
           </div>
-          <div className="pl-3 pr-5 p-1 text-gray-700 text-[13px]">
+          <div className="pl-3 pr-5 p-1 text-gray-700 text-[13px] flex-1">
             Use AI to build a custom app tailored to your workflow
           </div>
-        </div>
-        <div className="w-full h-23 bg-white border border-gray-300 rounded-md hover:shadow hover:cursor-pointer">
+        </div> 
+        <div className="flex-1 pt-0.5 pl-0.5 pr-1 pb-2 bg-white border border-gray-300 rounded-md hover:shadow hover:cursor-pointer min-w-[200px]">
           <div className="pt-3 pl-3 flex flex-row gap-2 items-center font-semibold text-[15px]">
             <Grid2X2 className="text-purple-800" size={18} />
             Start with templates
           </div>
-          <div className="pl-3 pr-5 p-1 text-gray-700 text-[13px]">
+          <div className="pl-3 pr-5 p-1 text-gray-700 text-[13px] flex-1">
             Select a template to get started and customize as you go.
           </div>
         </div>
-        <div className="w-full h-23 bg-white border border-gray-300 rounded-md hover:shadow hover:cursor-pointer">
+        <div className="flex-1 pt-0.5 pl-0.5 pr-1 pb-2 bg-white border border-gray-300 rounded-md hover:shadow hover:cursor-pointer min-w-[200px]">
           <div className="pt-3 pl-3 flex flex-row gap-2 items-center font-semibold text-[15px]">
             <ArrowUp className="text-green-600" size={20} />
             Quickly upload
           </div>
-          <div className="pl-3 pr-5 p-1 text-gray-700 text-[13px]">
+          <div className="pl-3 pr-5 p-1 text-gray-700 text-[13px] flex-1">
             Easily migrate your existing projects in just a few minutes.
           </div>
         </div>
-        <div className="w-full h-23 bg-white border border-gray-300 rounded-md hover:shadow hover:cursor-pointer">
+        <div className="flex-1 pt-0.5 pl-0.5 pr-1 pb-2 bg-white border border-gray-300 rounded-md hover:shadow hover:cursor-pointer min-w-[200px]">
           <div className="pt-3 pl-3 flex flex-row gap-2 items-center font-semibold text-[15px]">
             <TableCellsSplit className="text-blue-700" size={18} />
             Build an app on your own
           </div>
-          <div className="pl-3 pr-5 p-1 text-gray-700 text-[13px]">
+          <div className="pl-3 pr-5 p-1 text-gray-700 text-[13px] text">
             Start with a blank app and build your ideal workflow
           </div>
         </div>   

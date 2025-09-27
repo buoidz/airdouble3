@@ -85,9 +85,10 @@ function EditableCell({
 
   useEffect(() => {
     if (!editing) {
-      setValue(displayValue);
+      setValue(displayValue); 
     }
   }, [displayValue, editing]);
+
 
   const commitChange = () => {
     if (value !== initialValue) {
@@ -158,7 +159,7 @@ function EditableCell({
           ref={divRef}
           tabIndex={0}
           className="w-full h-full flex items-center focus:outline-none cursor-pointer select-none"
-          onDoubleClick={() => {
+          onClick={() => {
             setIsEditCell(true);
             setEditing(true)
           }}
@@ -179,7 +180,7 @@ function EditableCell({
         <>
           <input
             autoFocus
-            className="w-full h-full border-none bg-transparent focus:outline-none"
+            className="w-full h-full border-none bg-transparent focus:ring-0 focus:outline-none"
             value={value}
             onChange={(e) => {
               const newValue = e.target.value;
@@ -200,7 +201,7 @@ function EditableCell({
             }} 
             onKeyDown={handleKeyDown}
           />
-        </>
+        </> 
       )}
     </div>
   );
