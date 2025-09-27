@@ -117,7 +117,7 @@ function HideFieldsMenu({
       </MenuButton>
 
       <MenuItems 
-        anchor="bottom"
+        anchor="bottom end"
         className="[--anchor-gap:3px] z-60 w-75 rounded-md border border-gray-200 shadow-lg bg-white py-2 px-4 focus:ring-0 focus:outline-none"
       >            
         <div className="flex flex-row items-center justify-between gap-1">
@@ -140,8 +140,8 @@ function HideFieldsMenu({
               onClick={() => toggleColumnVisibility(col.id)}
             >
               <div 
-                className={`w-3.5 h-2 px-0.5 flex flex-shrink-0 items-center rounded-xl ${
-                    columnVisibility[col.id] ? "bg-green-500 " : "bg-gray-300"
+                className={`w-4 h-2.5 px-0.5 flex flex-shrink-0 items-center rounded-xl ${
+                    columnVisibility[col.id] ? "bg-[#048A0E]" : "bg-gray-300"
                 }`}
               >
                 <div
@@ -275,7 +275,7 @@ function FilterMenu({
       </MenuButton>
 
       <MenuItems 
-        anchor="bottom"
+        anchor="bottom end"
         className="[--anchor-gap:3px] z-60 rounded-md border border-gray-200 shadow-lg bg-white py-2 pl-4 pr-8 focus:outline-none"
       >
         <div className="p-2 text-xs text-gray-500">In this view, show records</div>
@@ -294,7 +294,7 @@ function FilterMenu({
                 {index===1 && ( 
                   <select 
                     value={filterCondition}
-                    className="text-xs w-full p-2 flex-1 border border-gray-200 rounded appearance-none" 
+                    className="text-xs p-2 flex-1 border border-gray-200 rounded appearance-none" 
                     onChange={(e) => setFilterCondition(e.target.value as "AND" | "OR")}
                   >
                     {Object.keys(filterConditionAll).map((key) => (
@@ -323,7 +323,7 @@ function FilterMenu({
               <select
                 value={filter.type}
                 onChange={(e) => updateFilter(index, "type", e.target.value)}
-                className="w-20 text-xs border-l border-t border-b border-gray-200 p-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none hover:cursor-pointer"
+                className="text-xs border-l border-t border-b border-gray-200 p-2 flex-1 hover:bg-gray-100 appearance-none focus:ring-0 focus:outline-none hover:cursor-pointer"
               >
                 {Object.keys(types).map((key) => (
                     <option key={key} value={key}>{types[key]}</option>
@@ -622,6 +622,7 @@ type TableToolBarProps = {
   setColumnVisibility: React.Dispatch<React.SetStateAction<VisibilityState>>;
   isAdding100k: boolean
   setIsAdding100k: React.Dispatch<React.SetStateAction<boolean>>;
+  setMenuViewSideBarOpen: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
 export function TableToolBar({
@@ -640,6 +641,7 @@ export function TableToolBar({
   setColumnVisibility,
   isAdding100k,
   setIsAdding100k,
+  setMenuViewSideBarOpen,
 }: TableToolBarProps) {
   const {data: columns} = api.table.getColumnDataByTableId.useQuery({id: tableId});
 
@@ -647,12 +649,13 @@ export function TableToolBar({
 
   return (
     <div className="h-12 flex flex-row justify-between items-center border-b border-gray-300 bg-white  sticky top-22 z-50">
-
       <div className="px-5 flex flex-row items-center">
         <button 
           className={`p-2 rounded-md hover:bg-gray-100 ${
             isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
-          }`}>
+          }`}
+          onClick={() => setMenuViewSideBarOpen((prev) => !prev)}
+        >
           <MenuIcon size={16} />
         </button>
         <button className={`m-2 p-1 rounded-sm flex flex-row items-center gap-2 whitespace-nowrap flex-nowrap hover:bg-gray-100 ${
@@ -682,7 +685,7 @@ export function TableToolBar({
         />
         <button 
           className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 ${
-            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
+            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-not-allowed "
           }`}
         >          
           <SquareLibrary size={14} />
@@ -696,7 +699,7 @@ export function TableToolBar({
         />
         <button 
           className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 ${
-            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
+            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-not-allowed"
           }`}
         >
           <PaintBucket size={14} />
@@ -704,14 +707,14 @@ export function TableToolBar({
         </button>
         <button 
           className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 ${
-            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
+            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-not-allowed"
           }`}
         >         
           <ListChevronsUpDown size={14} />
         </button>
         <button 
           className={`p-2 rounded-sm flex flex-row items-center gap-2 hover:bg-gray-100 ${
-            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-pointer "
+            isAdding100k ? "opacity-50 hover:cursor-not-allowed" : "hover:cursor-not-allowed"
           }`}
         >          
           <ExternalLink size={14} />

@@ -33,7 +33,7 @@ export function HomeSideBar() {
           </div>
         </div>
 
-        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black flex flex-row justify-between items-center px-4 hover:cursor-pointer">
+        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black flex flex-row justify-between items-center px-4 hover:cursor-not-allowed">
           <div className="flex flex-row items-center gap-2">
             <Star size={18} />
             Starred
@@ -43,21 +43,21 @@ export function HomeSideBar() {
           </div>
         </div>
 
-        <div className="h-8 w-70 rounded-md hover:bg-gray-100 text-black flex flex-row justify-between items-center px-4 gap-3">
+        <div className="h-8 w-70 rounded-md  text-black flex flex-row justify-between items-center px-4 gap-3">
           <button className="border border-gray-200 text-gray-400 rounded-xs p-2">
             <Star size={14} />
           </button>
           <span className="text-[11px] text-gray-500 leading-[0.8rem] font-normal">Your starred bases, interfaces, and workspaces will appear here</span>
         </div>
 
-        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black flex flex-row justify-between items-center px-4 hover:cursor-pointer">
+        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black flex flex-row justify-between items-center px-4 hover:cursor-not-allowed">
           <div className="flex flex-row items-center gap-2">
             <SquareArrowOutUpRight size={18} />
             Shared
           </div>
         </div>
 
-        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black flex flex-row justify-between items-center px-4 hover:cursor-pointer">
+        <div className="h-10 w-70 rounded-md hover:bg-gray-100 text-black flex flex-row justify-between items-center px-4 hover:cursor-not-allowed">
           <div className="flex flex-row items-center gap-2">
             <UsersRound size={18} />
             Workspaces
@@ -72,17 +72,17 @@ export function HomeSideBar() {
 
       <div className="flex flex-col items-center m-3">
         <div className="mb-4 w-65 border border-gray-100"></div>
-        <div className="h-8 w-70 text-black text-xs flex flex-row items-center px-4 gap-2  hover:cursor-pointer">
+        <div className="h-8 w-70 text-black text-xs flex flex-row items-center px-4 gap-2  hover:cursor-not-allowed">
           <BookOpen size={14} />
           Templates and apps
         </div>
 
-        <div className="h-8 w-70 text-black text-xs flex flex-row items-center px-4 gap-2 hover:cursor-pointer">
+        <div className="h-8 w-70 text-black text-xs flex flex-row items-center px-4 gap-2 hover:cursor-not-allowed">
           <ShoppingBag size={14} />
           Marketplace
         </div>
 
-        <div className="h-8 w-70 text-black text-xs flex flex-row items-center px-4 gap-2 hover:cursor-pointer">
+        <div className="h-8 w-70 text-black text-xs flex flex-row items-center px-4 gap-2 hover:cursor-not-allowed">
           <Download size={14} />
           Import
         </div>

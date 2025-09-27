@@ -16,32 +16,32 @@ export function BaseTopBar({baseName, baseId}: {baseName: string; baseId: string
       </div>
 
       <div className="h-full flex flex-row items-center justify-center gap-4">
-        <div className="h-full text-black text-xs font-semibold flex items-center border-b-2" style={{ borderColor: tableColor }}>
+        <div className="h-full text-black text-xs font-semibold flex items-center border-b-2 hover:cursor-not-allowed" style={{ borderColor: tableColor }}>
           <span className="text-black text-xs font-semibold">Data</span>
         </div>
-        <div className="text-gray-600 text-xs font-semibold border-b-2 border-white">Automations</div>
-        <div className="text-gray-600 text-xs font-semibold border-b-2 border-white">Interfaces</div>
-        <div className="text-gray-600 text-xs font-semibold border-b-2 border-white">Forms</div>
+        <div className="text-gray-600 text-xs font-semibold border-b-2 border-white hover:cursor-not-allowed">Automations</div>
+        <div className="text-gray-600 text-xs font-semibold border-b-2 border-white hover:cursor-not-allowed">Interfaces</div>
+        <div className="text-gray-600 text-xs font-semibold border-b-2 border-white hover:cursor-not-allowed">Forms</div>
       </div>
       
       <div className="ml-auto flex flex-row items-center gap-2">
-        <button className="p-1 rounded-4xl flex flex-row items-center hover:cursor-pointer hover:bg-gray-200">
+        <button className="p-1 rounded-4xl flex flex-row items-center hover:cursor-not-allowed hover:bg-gray-200">
           <History  className="m-1 text-gray-600 " size={14} />
         </button>
 
-        <button className="px-3 py-2 bg-gray-100 rounded-4xl flex flex-row items-center hover:cursor-pointer hover:shadow-xs ">
+        <button className="px-3 py-2 bg-gray-100 rounded-4xl flex flex-row items-center hover:cursor-not-allowed hover:shadow-xs ">
           <CircleFadingArrowUp className="inline mr-2 text-black" size={16} />
           <div className="text-xs text-black">Upgrade</div>
         </button>
 
-        <button className="px-3 py-2 border border-gray-200 bg-white rounded-md flex flex-row items-center hover:cursor-pointer hover:shadow-xs ">
+        <button className="px-3 py-2 border border-gray-200 bg-white rounded-md flex flex-row items-center hover:cursor-not-allowed hover:shadow-xs ">
           <Dock className="inline mr-2" size={16} />
           <div className="text-xs text-black">Launch</div>
         </button>
 
         {/* <button className="px-3 py-2 border border-gray-200 shadow-sm bg-white rounded-md flex flex-row items-center "> */}
         <button 
-          className="px-3 py-2 text-xs font-semibold text-white rounded-md hover:cursor-pointer hover:shadow-xs" 
+          className="px-3 py-2 text-xs font-semibold text-white rounded-md hover:cursor-not-allowed hover:shadow-xs" 
           style={{ backgroundColor: tableColor }}>
           Share
         </button>

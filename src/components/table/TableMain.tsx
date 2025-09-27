@@ -26,6 +26,9 @@ export interface FilterConfig {
 
 export function TableMain({baseId}: {baseId: string}) {
   const utils = api.useUtils();
+
+  const [menuViewSideBarOpen, setMenuViewSideBarOpen] = useState(true);
+
   const {data: tables, isLoading: tablesLoading} = api.base.getAllTablesBaseById.useQuery({id: baseId});
   const [selectedTableId, setSelectedTableId] = useState<string>("");
 
@@ -162,7 +165,7 @@ export function TableMain({baseId}: {baseId: string}) {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedFilters(filterConfig);
-    }, 200);
+    }, 500);
 
     return () => clearTimeout(handler);
   }, [filterConfig]);
@@ -171,7 +174,7 @@ export function TableMain({baseId}: {baseId: string}) {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSorts(sortConfig);
-    }, 200);
+    }, 500);
 
     return () => clearTimeout(handler);
   }, [sortConfig]);
@@ -229,30 +232,51 @@ export function TableMain({baseId}: {baseId: string}) {
         setColumnVisibility={setColumnVisibility}
         isAdding100k={isAdding100k}
         setIsAdding100k={setIsAdding100k}
+        setMenuViewSideBarOpen={setMenuViewSideBarOpen}
       /> 
+
+      {!menuViewSideBarOpen ? (
+        <div className="flex flex-row overflow-hidden"  style={{ height: `calc(100vh - 56px - 32px - 48px)` }}>
+          <TableContent 
+            tableId={selectedTableId} 
+            filterConfig={debouncedFilters} 
+            filterCondition={filterCondition} 
+            sortConfig={debouncedSorts} 
+            searchTerm={debouncedSearchTerm}
+            setNumFieldsContainSearchTerm={setNumFieldsContainSearchTerm}
+            setNumCellsContainSearchTerm={setNumCellsContainSearchTerm}
+            columnVisibility={columnVisibility}
+            setColumnVisibility={setColumnVisibility}
+            isViewReady={isViewReady}
+            isAdding100k={isAdding100k}
+          />
+        </div>
+      ):(
+        <div className="flex flex-row pl-70 overflow-hidden"  style={{ height: `calc(100vh - 56px - 32px - 48px)` }}>
+          <TableViewSideBar   
+            tableId={selectedTableId}
+            views={views}
+            selectedView={selectedView}
+            handleSwitchView={handleSwitchView}
+            isAdding100k={isAdding100k}
+          />
+          <TableContent 
+            tableId={selectedTableId} 
+            filterConfig={debouncedFilters} 
+            filterCondition={filterCondition} 
+            sortConfig={debouncedSorts} 
+            searchTerm={debouncedSearchTerm}
+            setNumFieldsContainSearchTerm={setNumFieldsContainSearchTerm}
+            setNumCellsContainSearchTerm={setNumCellsContainSearchTerm}
+            columnVisibility={columnVisibility}
+            setColumnVisibility={setColumnVisibility}
+            isViewReady={isViewReady}
+            isAdding100k={isAdding100k}
+          />
+        </div>
+      )}
       
-      <div className="flex flex-row pl-70 overflow-hidden"  style={{ height: `calc(100vh - 56px - 32px - 48px)` }}>
-        <TableViewSideBar   
-          tableId={selectedTableId}
-          views={views}
-          selectedView={selectedView}
-          handleSwitchView={handleSwitchView}
-          isAdding100k={isAdding100k}
-        />
-        <TableContent 
-          tableId={selectedTableId} 
-          filterConfig={debouncedFilters} 
-          filterCondition={filterCondition} 
-          sortConfig={debouncedSorts} 
-          searchTerm={debouncedSearchTerm}
-          setNumFieldsContainSearchTerm={setNumFieldsContainSearchTerm}
-          setNumCellsContainSearchTerm={setNumCellsContainSearchTerm}
-          columnVisibility={columnVisibility}
-          setColumnVisibility={setColumnVisibility}
-          isViewReady={isViewReady}
-          isAdding100k={isAdding100k}
-        />
-      </div>
+      
     </div>
   );
 }

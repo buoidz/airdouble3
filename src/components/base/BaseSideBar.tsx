@@ -22,14 +22,14 @@ export function BaseSideBar() {
             alt="Airtable Logo" 
             width={40}
             height={40} 
-            className="h-6 w-8 hover:cursor-pointer" 
+            className="h-6 w-8 hover:cursor-not-allowed" 
           />
       </div>
       <div className="flex flex-col items-center gap-2">
-        <button className="rounded-4xl hover:bg-gray-200">
+        <button className="rounded-4xl hover:bg-gray-200 hover:cursor-not-allowed">
           <CircleQuestionMark className="m-2 text-black" size={14} />
         </button>
-        <button className="rounded-4xl hover:bg-gray-200">
+        <button className="rounded-4xl hover:bg-gray-200 hover:cursor-not-allowed">
           <Bell className="m-2 text-black" size={14} />
         </button>
         <UserButton />

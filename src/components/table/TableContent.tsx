@@ -424,7 +424,7 @@ export function TableContent({
           accessorKey: col.id,
           header: col.name,
           enableResizing: true,
-          size: 150,
+          size: 180,
           minSize: 50,
           maxSize: 500,
           cell: (props: CellContext<RowData & { originalRowId: string }, unknown>) => {
@@ -662,7 +662,7 @@ const tableRenderKey = useMemo(() =>
           ">            
             {table.getHeaderGroups().map(headerGroup => (
               <tr key={headerGroup.id}> 
-                <th className="w-25 border-b border-gray-300 sticky left-0 z-20 bg-white">{" "}</th>
+                <th className="w-18 border-b border-gray-300 sticky left-0 z-20 bg-white">{" "}</th>
                 {headerGroup.headers.map((header, headerIndex) => { 
                   const isHighlightedFilter = isColumnHighlightedFilter(header.column.id)
                   const isHighlightedSort = isColumnHighlightedSort(header.column.id);
@@ -681,7 +681,7 @@ const tableRenderKey = useMemo(() =>
                       className={`relative group border-b border-gray-300 px-4 py-2 hover:bg-gray-50 
                         ${getBgColor() || (headerIndex == 0 ? "bg-white" : "")}  
                         ${
-                          headerIndex === 0 ? "sticky left-25 z-20 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300 after:pointer-events-none" : "border-r"
+                          headerIndex === 0 ? "sticky left-18 z-20 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300 after:pointer-events-none" : "border-r"
                         }`}
                       style={{ width: header.getSize() }}
                     >
@@ -689,7 +689,8 @@ const tableRenderKey = useMemo(() =>
                         className={`text-left text-sm font-medium text-black truncate`}
                         style={{ 
                           maxWidth: `${header.getSize() -34}px`,
-                          minWidth: 0
+                          minWidth: 0,
+                          // height: "20px",
                         }}
                       >
                         {flexRender(header.column.columnDef.header, header.getContext())}
@@ -727,13 +728,27 @@ const tableRenderKey = useMemo(() =>
                     height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
+                  className="group hover:bg-gray-100"
                 >
                   <th 
-                    className={`sticky left-0 h-full text-xs font-normal text-gray-500 w-25 border-b border-gray-300 z-20 select-none ${
+                    className={`sticky left-0 h-full text-xs font-normal text-gray-500 w-18 border-b border-gray-300 z-20 select-none ${
                       isFirstCellHighlighted ? 'bg-yellow-100' : ''
                     }`}
                   >
-                    <span className="bg-white block h-full w-full pr-6 py-2 ">{virtualRow.index + 1}</span>
+                    <span className="group-hover:bg-gray-100 bg-white block h-full w-full pl-8 py-2 text-left ">{virtualRow.index + 1}</span>
+                    {/* <input 
+                      type="checkbox" 
+                      className="
+                        peer ml-6.5 hidden group-hover:block w-5 h-5
+                        appearance-none cursor-pointer rounded-md border-2 border-gray-300 bg-white
+                        checked:bg-blue-600 checked:border-blue-600
+                        relative
+                        before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center
+                        before:text-white before:font-bold before:text-sm
+                        before:opacity-0 checked:before:opacity-100
+                      "
+                    /> */}
+
                   </th>
                   {row.getVisibleCells().map((cell, colIndex) => {
                     const isHighlightedFilter = isColumnHighlightedFilter(cell.column.id)
@@ -761,7 +776,7 @@ const tableRenderKey = useMemo(() =>
                           handleCellNavigation(e, currentCell);
                         }}
                         className={`border-b border-gray-300 text-sm text-gray-800                           
-                          ${colIndex == 0 ? "sticky left-25 z-20 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300 after:pointer-events-none" : "border-r"}
+                          ${colIndex == 0 ? "sticky left-18 z-20 after:content-[''] after:absolute after:top-0 after:left-0 after:w-full after:h-full after:border-r after:border-gray-300 after:pointer-events-none" : "border-r"}
                         `}
                         style={{ 
                           width: cell.column.getSize(), 
@@ -770,7 +785,7 @@ const tableRenderKey = useMemo(() =>
                           minWidth: cell.column.getSize()
                         }}
                       >
-                        <div className={`block h-full w-full px-4 py-1 ${isCurrent ? "shadow-[inset_0_0_0_2px_rgb(59_130_246)]" : ""}  ${getBgColor() || (colIndex == 0 ? "bg-white" : "")}`}>
+                        <div className={`block h-full w-full px-4 py-1 group-hover:bg-gray-100 ${isCurrent ? "shadow-[inset_0_0_0_2px_rgb(59_130_246)]" : ""}  ${getBgColor() || (colIndex == 0 ? "bg-white" : "")}`}>
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
                         </div>
                       </td>
@@ -808,7 +823,7 @@ const tableRenderKey = useMemo(() =>
                 colSpan={2}
               >
                 <button 
-                  className="py-3 pl-8 w-full h-full focus:ring-0 focus:outline-none cursor-pointer"
+                  className="py-3 pl-7 w-full h-full focus:ring-0 focus:outline-none cursor-pointer"
                   onClick={handleAddRowMutation}
                   disabled={addRowMutation.isPending}
                 >
@@ -833,7 +848,7 @@ const tableRenderKey = useMemo(() =>
         </table>
 
       </div>
-      <div className="absolute left-86 bottom-7 h-10 w-32 rounded-3xl z-20 bg-white border border-gray-200 flex items-center">
+      {/* <div className="absolute left-86 bottom-7 h-10 w-32 rounded-3xl z-20 bg-white border border-gray-200 flex items-center">
         <div className="flex items-center justify-center h-full w-11 rounded-full rounded-r-none hover:bg-gray-200 hover:cursor-pointer">
           <PlusIcon className="ml-2 mr-1 text-gray-700" size={18}/>
 
@@ -844,7 +859,7 @@ const tableRenderKey = useMemo(() =>
           <WandSparkles className="ml-4" size={14} />
           Add...
         </div>
-      </div>
+      </div> */}
       {/* <div className="absolute left-84 right-0 bottom-0 h-8 bg-white border-t border border-gray-200 text-[11px] px-2 py-1">
         {rowData.length} record{rowData.length>1 ? "s": ""}
       </div>   */}

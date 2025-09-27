@@ -100,7 +100,7 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId, isAddin
               {openRenameMenu ? (
                 <MenuItems 
                   anchor="bottom start"
-                  className="px-4 py-3 z-20 [--anchor-gap:6px] w-85 border border-gray-300 rounded-md bg-white shadow-md flex flex-col items-start"
+                  className="px-4 py-3 [--anchor-gap:6px] w-85 border border-gray-300 rounded-md bg-white shadow-md flex flex-col items-start z-100"
                   style={{ outline: "none"}}
                 >
                   <MenuItem>
@@ -143,7 +143,7 @@ function TableMenu({tables, baseId, selectedTableId, setSelectedTableId, isAddin
                 ) : (
                 <MenuItems 
                   anchor="bottom start"
-                  className="px-4 py-3 z-20 [--anchor-gap:6px] w-85 border border-gray-300 rounded-md bg-white shadow-md flex flex-col items-start"
+                  className="px-4 py-3 z-100 [--anchor-gap:6px] w-85 border border-gray-300 rounded-md bg-white shadow-md flex flex-col items-start"
                   style={{ outline: "none"}}
                 >
                   <MenuItem>
@@ -230,7 +230,7 @@ export function TableListBar({tables, baseId, selectedTableId, setSelectedTableI
 
   return (
     <div 
-      className="h-8 flex flex-row items-center sticky top-14 z-50"
+      className="h-8 flex flex-row items-center sticky top-14 z-80"
       style={{ backgroundColor: tableCorlor }}
     > 
       <TableMenu 
