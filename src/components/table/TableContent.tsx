@@ -3,7 +3,7 @@ import { LoadingPage, LoadingSpinner } from "../LoadingPage";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { flexRender, getCoreRowModel, useReactTable, type CellContext, type VisibilityState } from "@tanstack/react-table";
-import { Baseline, Hash, Plus, PlusIcon, WandSparkles } from "lucide-react";
+import { Baseline, Hash, Plus } from "lucide-react";
 import { ColumnType } from "@prisma/client";
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import type { FilterConfig, SortConfig } from "./TableMain";
@@ -148,7 +148,11 @@ function EditableCell({
       setEditing(false);
       setIsEditCell(false); // close current editor
       // call parent to move currentCell and re-enter edit mode
-      (e.shiftKey ? onNavigate?.('prev') : onNavigate?.('next'));
+      if (e.shiftKey) {
+        onNavigate?.('prev');
+      } else {
+        onNavigate?.('next');
+      }
     }
   };
 
