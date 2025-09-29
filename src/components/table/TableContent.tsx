@@ -479,13 +479,18 @@ export function TableContent({
 
   // All columns visible by default
   useEffect(() => {
-    if (colData && colData.length > 0) {
-      const initialVisibility: VisibilityState = {};
-      colData.forEach((col) => {
-        initialVisibility[col.id] = true;
-      });
-      setColumnVisibility(initialVisibility);
+    const hasExistingVisibility = Object.keys(columnVisibility).length > 0;
+
+    if (!hasExistingVisibility) {
+      if (colData && colData.length > 0) {
+        const initialVisibility: VisibilityState = {};
+        colData.forEach((col) => {
+          initialVisibility[col.id] = true;
+        });
+        setColumnVisibility(initialVisibility);
+      }
     }
+
   }, [columns, colData, setColumnVisibility]);
 
     
@@ -831,17 +836,19 @@ const tableRenderKey = useMemo(() =>
                 </button>
                 
               </td>
-              <td 
-                className="sticky left-0 border-r border-b border-gray-300 " 
-                colSpan={table.getVisibleLeafColumns().length-1}
-              >
-                <button 
-                  className="w-full h-full focus:ring-0 focus:outline-none cursor-pointer"
-                  onClick={handleAddRowMutation}
-                  disabled={addRowMutation.isPending}
-                >
-                </button>
-              </td>
+              {table.getVisibleLeafColumns().length > 1 && (
+                  <td 
+                    className="sticky left-0 border-r border-b border-gray-300 " 
+                    colSpan={table.getVisibleLeafColumns().length-1}
+                  >
+                    <button 
+                      className="w-full h-full focus:ring-0 focus:outline-none cursor-pointer"
+                      onClick={handleAddRowMutation}
+                      disabled={addRowMutation.isPending}
+                    >
+                    </button>
+                  </td>  
+              )}
             </tr>
           </tfoot>
           
