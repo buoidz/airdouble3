@@ -189,23 +189,46 @@ export function TableMain({baseId}: {baseId: string}) {
   }, [searchTerm]);
 
 
+  if(tablesLoading) return <LoadingPage />;
 
-
-  if(tablesLoading || viewsLoading){
-    return <LoadingPage />
-  }
   if(!tables || tables.length === 0 || !tables[0]){
     return <div>No table found</div>
   }
+
+  
+  const tableProps = tables.map((table) => ({
+    id: table.id,
+    name: table.name,
+  }));
+
+  if(viewsLoading) {
+    return (
+      <div className="w-full flex flex-col border-collapse">
+        <TableListBar 
+          tables={tableProps} 
+          baseId={baseId} 
+          selectedTableId={selectedTableId} 
+          setSelectedTableId={setSelectedTableId} 
+          isAdding100k={isAdding100k}
+        />
+        <div className="h-12 flex flex-row justify-between items-center border-b border-gray-300 bg-white  sticky top-22 z-50"/>
+
+        <div className="flex flex-row pl-70 overflow-hidden"  style={{ height: `calc(100vh - 56px - 32px - 48px)` }}>
+          <div className="h-full w-70 bg-white border-r border-gray-300 overflow-hidden fixed left-14 top-34"/>
+          <LoadingPage />
+        </div>
+        
+        
+      </div>
+    );
+  }
+  
+
   if(!views || views.length === 0 || !views[0]){
     return <div>No view found</div>
   }
 
 
-  const tableProps = tables.map((table) => ({
-    id: table.id,
-    name: table.name,
-  }));
 
   return (
     <div className="w-full flex flex-col border-collapse">

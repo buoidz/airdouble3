@@ -166,6 +166,35 @@ export const tableRouter = createTRPCRouter({
       await ctx.db.table.delete({ where: { id: input.tableId } });
     }),
 
+  getCountRowsByTableId: publicProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const currentUser = ctx.currentUser;
+      const table = await ctx.db.table.findUnique({
+        where: { id: input.id },
+      });
+
+      if (!table) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Table not found.",
+        });
+      } 
+
+      if (!currentUser || table.ownerId !== currentUser.id) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "You do not have permission to view this table.",
+        });
+      }
+
+      const rowCount = await ctx.db.row.count({
+        where: { tableId: input.id },
+      });
+
+      return rowCount;
+    }),
+
   getRowDataByTableId: publicProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -437,7 +466,7 @@ export const tableRouter = createTRPCRouter({
       const startOrder = lastRow ? lastRow.order + 1 : 0;
 
       const totalRows = 100000;
-      const rowBatchSize = 10000; // insert 10k rows at a time
+      const rowBatchSize = 5000; // insert 10k rows at a time
 
       const allRowsData = Array.from({ length: totalRows }, (_, i) => ({
         id: startId + i,

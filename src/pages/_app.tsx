@@ -12,7 +12,15 @@ const geist = Geist({
 
 const MyApp: AppType = ({ Component, pageProps }) => {
   return (
-    <ClerkProvider>
+    <ClerkProvider
+      appearance={{
+        layout: {
+          socialButtonsPlacement: 'bottom',
+          socialButtonsVariant: 'iconButton',
+          unsafe_disableDevelopmentModeWarnings: false,
+        }
+      }}
+    >
       <Component {...pageProps} />
     </ClerkProvider>
   )

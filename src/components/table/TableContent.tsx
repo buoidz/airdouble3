@@ -33,8 +33,13 @@ type EditableCellProps = {
   columnType: ColumnType;
   isCurrent: boolean;
   setIsEditCell: (isEditCell: boolean) => void;
-  pendingChanges: PendingChange[], 
-  setPendingChanges: React.Dispatch<React.SetStateAction<PendingChange[]>> 
+  pendingChanges: PendingChange[];
+  setPendingChanges: React.Dispatch<React.SetStateAction<PendingChange[]>>;
+  onNavigate: (dir: 'next' | 'prev') => void;
+  filterConfig: FilterConfig[],
+  filterCondition: "AND" | "OR",
+  sortConfig: SortConfig[],
+  searchTerm: string
 }
 
 function EditableCell({ 
@@ -46,56 +51,84 @@ function EditableCell({
   isCurrent, 
   setIsEditCell,
   pendingChanges,
-  setPendingChanges ,
+  setPendingChanges,
+  onNavigate,
+  filterConfig,
+  filterCondition,
+  sortConfig,
+  searchTerm
 }: EditableCellProps) {
   const utils = api.useUtils();
 
-  // Check if there's a pending change for this cell
-  const pendingChange = pendingChanges.find(
-    change => change.rowId === rowId && change.columnId === columnId
-  );
+  // // Check if there's a pending change for this cell
+  // const pendingChange = pendingChanges.find(
+  //   change => change.rowId === rowId && change.columnId === columnId
+  // );
   
-  // Use pending change value if it exists, otherwise use initial value
-  const displayValue = pendingChange ? pendingChange.value : initialValue;
+  // // Use pending change value if it exists, otherwise use initial value
+  // const displayValue = pendingChange ? pendingChange.value : initialValue;
   
 
-  const [value, setValue] = useState(displayValue);
+  const [value, setValue] = useState(initialValue);
   const [editing, setEditing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const divRef = useRef<HTMLDivElement>(null);
 
   const updateCellMutation = api.table.updateCell.useMutation({
-    onSuccess: async () => {
-      await utils.table.getRowDataByOperations.invalidate();
+    // optimistic update: update cache directly on success
+    onMutate: async (variables) => {
+      // variables contains { tableId, rowId, columnId, value }
+      try {
+        utils.table.getRowDataByOperations.setInfiniteData(
+          { tableId, filters: filterConfig, filterCondition, sorts: sortConfig, search: searchTerm, limit: 500 },
+          (old) => {
+            if (!old) return old;
+            const newPages = old.pages.map(page => {
+              const newRows = page.cleanRows.map(row => {
+                if (String(row.id) !== String(variables.rowId)) return row;
+                // update that cell value in the row.cells array
+                const newCells = row.cells.map(cell => {
+                  if (cell.columnId !== variables.columnId) return cell;
+                  // set new textValue or numberValue as appropriate (I assume server returns text)
+                  return {
+                    ...cell,
+                    textValue: variables.value,
+                    numberValue: isNaN(Number(variables.value)) ? null : Number(variables.value),
+                    containSearchTerm: cell.containSearchTerm, // preserve
+                  };
+                });
+                console.log("Updating row:", row.id, "Cell:", variables.columnId, "to value:", variables.value);
+                return { ...row, cells: newCells };
+              });
+              return { ...page, cleanRows: newRows };
+            });
+            return { ...old, pages: newPages };
+          }
+        );
+      } catch (err) {
+        // fallback to invalidation if something goes wrong
+        void utils.table.getRowDataByOperations.invalidate();
+      }
     },
     onError: () => {
       setValue(initialValue);
     },
     onSettled: () => {
-      setTimeout(() => {
-        setPendingChanges(prev =>
-          prev.filter(
-            change => !(change.rowId === rowId && change.columnId === columnId)
-          )
-        );
-      }, 10000);
+      void utils.table.getRowDataByOperations.invalidate();
     }
   });
 
-  useEffect(() => {
-    if (!editing) {
-      setValue(displayValue); 
-    }
-  }, [displayValue, editing]);
+
+  // useEffect(() => {
+  //   if (!editing) {
+  //     setValue(displayValue); 
+  //   }
+  // }, [displayValue, editing]);
 
 
   const commitChange = () => {
     if (value !== initialValue) {
-      setPendingChanges(prev => {
-        const filtered = prev.filter(change => !(change.rowId === rowId && change.columnId === columnId));
-        return [...filtered, { rowId, columnId, value }];
-      });
       updateCellMutation.mutate({ tableId, rowId, columnId, value });
     }
   };
@@ -109,7 +142,13 @@ function EditableCell({
       setEditing(false);
       divRef.current?.focus();
     } else if (e.key === "Tab") {
+      // commit and navigate to next/prev cell
       e.preventDefault();
+      commitChange();
+      setEditing(false);
+      setIsEditCell(false); // close current editor
+      // call parent to move currentCell and re-enter edit mode
+      (e.shiftKey ? onNavigate?.('prev') : onNavigate?.('next'));
     }
   };
 
@@ -388,7 +427,7 @@ export function TableContent({
     };
   }, []);
   
-
+  const {data: numRows, isLoading: numRowsLoading} = api.table.getCountRowsByTableId.useQuery({id: tableId});
   const {data: colData, isLoading: colLoading} = api.table.getColumnDataByTableId.useQuery({id: tableId});
   const {
     data, 
@@ -440,6 +479,11 @@ export function TableContent({
               setIsEditCell={setIsEditCell}
               pendingChanges={pendingChanges}
               setPendingChanges={setPendingChanges}
+              onNavigate={handleCellNavigationEditing}
+              filterConfig={filterConfig}
+              filterCondition={filterCondition}
+              sortConfig={sortConfig}
+              searchTerm={searchTerm}
             />;
           },      
       })) ?? [], 
@@ -617,6 +661,7 @@ export function TableContent({
       case "Tab":
         e.preventDefault();
         if (!e.shiftKey) {
+          console.log("Tab pressed");
           if (col < maxCols) {
             setCurrentCell({ row, col: col + 1 });
           } else if (row < maxRows) {
@@ -634,10 +679,38 @@ export function TableContent({
     }
   };
 
-const tableRenderKey = useMemo(() => 
-  `${JSON.stringify(sortConfig)}-${JSON.stringify(filterConfig)}-${searchTerm}`, 
-  [sortConfig, filterConfig, searchTerm]
-);
+  const handleCellNavigationEditing = (dir: "next" | "prev") => {
+    if (!currentCell) return;
+    const { row, col } = currentCell;
+    const maxCols = table.getVisibleLeafColumns().length - 1;
+    const maxRows = rows.length - 1;
+    
+    let newRow = row;
+    let newCol = col;
+
+    if (dir === "next") {
+      if (col < maxCols) {
+        newCol = col + 1;
+      } else if (row < maxRows) {
+        newRow = row + 1;
+        newCol = 0;
+      }
+    } else {
+      if (col > 0) {
+        newCol = col - 1;
+      } else if (row > 0) {
+        newRow = row - 1;
+        newCol = maxCols;
+      }
+    }
+
+    setCurrentCell({ row: newRow, col: newCol });
+  };
+
+  const tableRenderKey = useMemo(() => 
+    `${JSON.stringify(sortConfig)}-${JSON.stringify(filterConfig)}-${searchTerm}`, 
+    [sortConfig, filterConfig, searchTerm]
+  );
 
   
   if(colLoading || rowLoading || !isViewReady){
@@ -655,9 +728,9 @@ const tableRenderKey = useMemo(() =>
 
 
   return (
-    <div className="w-full">
+    <div className="w-full h-full flex flex-col" >
       <div ref={parentRef} className="relative w-full h-full overflow-y-auto pb-40 pr-20">
-        <table ref={tableRef} key={tableRenderKey} className="border-collapse" style={{ width: 'max-content', height: `${virtualizer.getTotalSize()}px`}}>
+        <table ref={tableRef} key={tableRenderKey} className="border-collapse" style={{ width: 'max-content'}}>
           <thead className="
             sticky top-0 bg-white z-10
             after:content-[''] 
@@ -741,19 +814,6 @@ const tableRenderKey = useMemo(() =>
                     }`}
                   >
                     <span className="group-hover:bg-gray-100 bg-white block h-full w-full pl-8 py-2 text-left ">{virtualRow.index + 1}</span>
-                    {/* <input 
-                      type="checkbox" 
-                      className="
-                        peer ml-6.5 hidden group-hover:block w-5 h-5
-                        appearance-none cursor-pointer rounded-md border-2 border-gray-300 bg-white
-                        checked:bg-blue-600 checked:border-blue-600
-                        relative
-                        before:content-['✓'] before:absolute before:inset-0 before:flex before:items-center before:justify-center
-                        before:text-white before:font-bold before:text-sm
-                        before:opacity-0 checked:before:opacity-100
-                      "
-                    /> */}
-
                   </th>
                   {row.getVisibleCells().map((cell, colIndex) => {
                     const isHighlightedFilter = isColumnHighlightedFilter(cell.column.id)
@@ -855,7 +915,7 @@ const tableRenderKey = useMemo(() =>
         </table>
 
       </div>
-      {/* <div className="absolute left-86 bottom-7 h-10 w-32 rounded-3xl z-20 bg-white border border-gray-200 flex items-center">
+      {/* <div className="sticky bottom-7 h-10 w-32 rounded-3xl z-20 border border-gray-200 flex items-center">
         <div className="flex items-center justify-center h-full w-11 rounded-full rounded-r-none hover:bg-gray-200 hover:cursor-pointer">
           <PlusIcon className="ml-2 mr-1 text-gray-700" size={18}/>
 
@@ -867,9 +927,9 @@ const tableRenderKey = useMemo(() =>
           Add...
         </div>
       </div> */}
-      {/* <div className="absolute left-84 right-0 bottom-0 h-8 bg-white border-t border border-gray-200 text-[11px] px-2 py-1">
-        {rowData.length} record{rowData.length>1 ? "s": ""}
-      </div>   */}
+      <div className="sticky bottom-0 h-6 bg-white border-t border border-gray-200 text-[11px] px-2 py-1 z-30">
+        {numRowsLoading || !numRows ? <LoadingSpinner size={12}/> : (`${numRows} record${numRows>1 ? "s": ""}`) }
+      </div>  
     </div>
   );
 }
